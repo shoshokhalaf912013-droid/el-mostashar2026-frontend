@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ألوان المنصة */
+:root {
+  --gold: #d4af37;
+  --dark-bg: #0b0b0b;
+  --dark-header: #111;
+  --dark-footer: #0f0f0f;
+}
+
+/* شكل الكروت */
+.card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
+}
+
+/* زر ذهبي */
+.btn-gold {
+  background: linear-gradient(90deg, #d4af37, #bfa046);
+  color: #000;
+  font-weight: 600;
+  padding: 0.5rem 1.2rem;
+  border-radius: 0.5rem;
+  transition: 0.3s ease;
+}
+
+.btn-gold:hover {
+  background: linear-gradient(90deg, #e7c857, #d4af37);
+  color: #111;
+}
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: #0a0a0a;
+  color: white;
+  font-size: 16px;
+  transition: border 0.3s;
+}
+
+.input:focus {
+  border-color: var(--gold);
+  outline: none;
+}
