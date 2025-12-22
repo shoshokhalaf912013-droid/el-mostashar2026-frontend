@@ -1,0 +1,39 @@
+/* ===== Super Admin Gold Cards ===== */
+
+.gold-text {
+  color: var(--gold);
+}
+
+.gold-border {
+  border-color: var(--gold);
+}
+
+.gold-glow {
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.35);
+}
+
+/* بطاقة صلاحيات */
+.gold-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.35s ease;
+}
+
+/* Hover احترافي */
+.gold-card:hover {
+  background: var(--gold);
+  color: #000;
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 0 32px rgba(212, 175, 55, 0.7);
+}
+
+/* الأيقونة داخل البطاقة */
+.gold-card:hover svg,
+.gold-card:hover span,
+.gold-card:hover p {
+  color: #000;
+}

@@ -1,0 +1,36 @@
+{
+  "name": "frontend_restored",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.14",
+    "vite": "^7.2.2"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@tailwindcss/forms": "^0.5.10",
+    "axios": "^1.13.2",
+    "firebase": "^12.5.0",
+    "framer-motion": "^10.18.0",
+    "lucide-react": "^0.556.0",
+    "pdf-lib": "^1.17.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^6.30.1",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5"
+  }
+}
