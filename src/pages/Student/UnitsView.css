@@ -1,0 +1,18 @@
+.units-page {
+  min-height: 100vh;
+  padding: 60px 40px;
+  background: radial-gradient(circle at top, #111, #000);
+}
+
+.units-title {
+  text-align: center;
+  font-size: 34px;
+  margin-bottom: 50px;
+  color: #ffd700;
+}
+
+.units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+}

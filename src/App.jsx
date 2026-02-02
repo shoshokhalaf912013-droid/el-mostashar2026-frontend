@@ -54,11 +54,11 @@ export default function App() {
 
   return (
     <Routes>
-      {/* auth */}
+      {/* ================= AUTH ================= */}
       <Route path="/login" element={<Login />} />
       <Route path="/student/register" element={<Register />} />
 
-      {/* Layout الرئيسي */}
+      {/* ================= PUBLIC + MAIN LAYOUT ================= */}
       <Route
         path="/"
         element={
@@ -74,32 +74,33 @@ export default function App() {
           />
         }
       >
-        {/* صفحات عامة */}
+        {/* public pages */}
         <Route index element={<Home />} />
         <Route path="subscription-plans" element={<SubscriptionPlans />} />
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
         <Route path="policy" element={<Policy />} />
 
-        {/* Modules */}
+        {/* modules */}
         <Route path="courses/*" element={<CoursesRoutes />} />
         <Route path="exams/*" element={<ExamsRoutes />} />
 
+        {/* profile */}
         <Route
           path="profile"
           element={user ? <Profile /> : <Navigate to="/login" />}
         />
-
-        {/* ✅ الطالب */}
-        <Route path="student/*" element={<StudentRoutes />} />
       </Route>
 
-      {/* dashboards منفصلة */}
+      {/* ================= STUDENT (INDEPENDENT) ================= */}
+      <Route path="/student/*" element={<StudentRoutes />} />
+
+      {/* ================= DASHBOARDS ================= */}
       <Route path="/super-admin/*" element={<SuperAdminRoutes />} />
       <Route path="/admin/*" element={<AdminRoutes />} />
       <Route path="/teacher/*" element={<TeacherRoutes />} />
 
-      {/* fallback */}
+      {/* ================= FALLBACK ================= */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -1,82 +1,170 @@
+import "../pages/Student/styles/accessibility.css";
 import { Routes, Route, Navigate } from "react-router-dom";
-
-/* 🔹 Layout */
 import StudentLayout from "../layouts/StudentLayout";
 
-/* 🔹 Pages */
-import StudentDashboard from "../pages/Student/StudentDashboard.jsx";
-import SelectStage from "../pages/Student/SelectStage.jsx";
-import SelectGrade from "../pages/Student/SelectGrade.jsx";
-import StudentProfile from "../pages/Student/StudentProfile.jsx";
+import { SecondaryProvider } from "../contexts/SecondaryContext";
+import RequireGrade from "./RequireGrade";
 
-/* 🔹 المواد */
-import SubjectsView from "../pages/Student/SubjectsView.jsx";
+/* ===== Common ===== */
+import StudentDashboard from "../pages/Student/StudentDashboard";
+import SelectStage from "../pages/Student/SelectStage";
+import StudentProfile from "../pages/Student/StudentProfile";
 
-/* 🔹 الوحدات */
-import UnitsView from "../pages/Student/UnitsView.jsx";
+/* ===== Primary + Prep ===== */
+import SelectGrade from "../pages/Student/SelectGrade";
+import PrimaryPrepSubjectsView from "../pages/Student/PrimaryPrep/PrimaryPrepSubjectsView";
+import UnitsView from "../pages/Student/UnitsView";
+import UnitsViewGeneral from "../pages/Student/UnitsViewGeneral";
+import LessonsView from "../pages/Student/LessonsView";
+import LessonFlow from "../pages/Student/LessonFlow";
 
-/* 🔹 الدروس داخل الوحدة */
-import LessonsView from "../pages/Student/LessonsView.jsx";
+/* ===== Secondary ===== */
+import SelectSecondarySystem from "../pages/Student/SelectSecondarySystem";
+import SecondaryGradesView from "../pages/Student/Secondary/SecondaryGradesView";
+import SecondarySubjectsView from "../pages/Student/Secondary/SecondarySubjectsView";
+import SecondaryAdvancedSubjectsView from "../pages/Student/Secondary/SecondaryAdvancedSubjectsView";
 
-/* 🔹 الدرس */
-import LessonFlow from "../pages/Student/LessonFlow.jsx";
+/* ===== Bac ===== */
+import BacGradesView from "../pages/Student/Bac/BacGradesView";
+import BacUnitsView from "../pages/Student/Bac/BacUnitsView";
 
-/* 🔹 أخرى */
-import Videos from "../pages/Student/Videos.jsx";
-import ExamPage from "../pages/Student/ExamPage.jsx";
-import ExamResult from "../pages/Student/ExamResult.jsx";
-import Homework from "../pages/Student/Homework.jsx";
-import HomeworkPage from "../pages/Student/HomeworkPage.jsx";
-import TakeExam from "../pages/Student/TakeExam.jsx";
-import ReportPage from "../pages/Student/ReportPage.jsx";
-import PrivateCourseDetails from "../pages/Student/PrivateCourseDetails.jsx";
+/* ===== Bac Router ===== */
+import BacSubjectsRouter from "./BacSubjectsRouter";
 
 export default function StudentRoutes() {
   return (
-    <Routes>
-      <Route element={<StudentLayout />}>
-        <Route index element={<Navigate to="dashboard" replace />} />
+    <SecondaryProvider>
+      <Routes>
+        <Route element={<StudentLayout />}>
 
-        {/* الأساس */}
-        <Route path="dashboard" element={<StudentDashboard />} />
-        <Route path="select-stage" element={<SelectStage />} />
-        <Route path="select-grade" element={<SelectGrade />} />
-        <Route path="profile" element={<StudentProfile />} />
+          {/* ================= ROOT ================= */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfile />} />
+          <Route path="select-stage" element={<SelectStage />} />
 
-        {/* صف → مواد */}
-        <Route path="subjects/:gradeId" element={<SubjectsView />} />
+          {/* ================= PRIMARY + PREP ================= */}
+          <Route
+            path="primary-prep/select-grade/:stageId"
+            element={<SelectGrade />}
+          />
 
-        {/* مادة → وحدات */}
-        <Route
-          path="units/:gradeId/:subjectKey"
-          element={<UnitsView />}
-        />
+          <Route
+            path="primary-prep/subjects/:gradeId"
+            element={
+              <RequireGrade>
+                <PrimaryPrepSubjectsView />
+              </RequireGrade>
+            }
+          />
 
-        {/* وحدة → دروس */}
-        <Route
-          path="lessons/:gradeId/:subjectKey/:unitId"
-          element={<LessonsView />}
-        />
+          {/* القديم */}
+          <Route
+            path="primary-prep/units-old/:gradeId/:subjectId"
+            element={
+              <RequireGrade>
+                <UnitsView />
+              </RequireGrade>
+            }
+          />
 
-        {/* درس */}
-        <Route
-          path="lesson/:gradeId/:subjectKey/:unitId/:lessonId"
-          element={<LessonFlow />}
-        />
+          {/* الجديد */}
+          <Route
+            path="primary-prep/units/:gradeId/:subjectId"
+            element={
+              <RequireGrade>
+                <UnitsViewGeneral />
+              </RequireGrade>
+            }
+          />
 
-        {/* أخرى */}
-        <Route
-          path="private-courses/:courseId"
-          element={<PrivateCourseDetails />}
-        />
-        <Route path="videos" element={<Videos />} />
-        <Route path="exam" element={<ExamPage />} />
-        <Route path="exam-result" element={<ExamResult />} />
-        <Route path="homework" element={<Homework />} />
-        <Route path="homework-page" element={<HomeworkPage />} />
-        <Route path="take-exam" element={<TakeExam />} />
-        <Route path="report" element={<ReportPage />} />
-      </Route>
-    </Routes>
+          <Route
+            path="primary-prep/lessons/:gradeId/:subjectId/:unitId"
+            element={
+              <RequireGrade>
+                <LessonsView />
+              </RequireGrade>
+            }
+          />
+
+          <Route
+            path="primary-prep/lesson/:gradeId/:subjectId/:unitId/:lessonId"
+            element={
+              <RequireGrade>
+                <LessonFlow />
+              </RequireGrade>
+            }
+          />
+
+          {/* ================= SECONDARY ================= */}
+          <Route path="secondary" element={<SelectSecondarySystem />} />
+          <Route path="secondary/grades" element={<SecondaryGradesView />} />
+
+          <Route
+            path="secondary/subjects/sec1"
+            element={<SecondarySubjectsView />}
+          />
+
+          <Route
+            path="secondary/advanced-subjects/:gradeId"
+            element={<SecondaryAdvancedSubjectsView />}
+          />
+
+          <Route
+            path="secondary/units/:gradeId/:subjectId"
+            element={<UnitsView />}
+          />
+
+          <Route
+            path="secondary/lessons/:gradeId/:subjectId/:unitId"
+            element={<LessonsView />}
+          />
+
+          <Route
+            path="secondary/lesson/:gradeId/:subjectId/:unitId/:lessonId"
+            element={<LessonFlow />}
+          />
+
+          {/* ================= BAC ================= */}
+          <Route path="bac/grades" element={<BacGradesView />} />
+
+          <Route
+            path="bac/subjects/bac1"
+            element={
+              <Navigate to="/student/secondary/subjects/sec1" replace />
+            }
+          />
+
+          <Route
+            path="bac/subjects/:gradeId"
+            element={
+              <RequireGrade>
+                <BacSubjectsRouter />
+              </RequireGrade>
+            }
+          />
+
+          <Route
+            path="bac/units/:gradeId/:subjectId"
+            element={
+              <RequireGrade>
+                <BacUnitsView />
+              </RequireGrade>
+            }
+          />
+
+          {/* 🔥 الإضافة الحاسمة – بدون كسر أي شيء */}
+          <Route
+            path="bac/lessons/:gradeId/:subjectId/:unitId"
+            element={
+              <RequireGrade>
+                <LessonsView />
+              </RequireGrade>
+            }
+          />
+
+        </Route>
+      </Routes>
+    </SecondaryProvider>
   );
 }

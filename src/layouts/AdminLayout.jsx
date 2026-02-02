@@ -29,7 +29,11 @@ export default function AdminLayout() {
             onClick={() => navigate("/admin")}
           />
 
-          {/* ✅ المسار الصحيح لإدارة الوحدات والدروس */}
+          <NavItem
+            label="إدارة المستخدمين"
+            onClick={() => navigate("/admin/users")}
+          />
+
           <NavItem
             label="إدارة الوحدات والدروس"
             onClick={() => navigate("/admin/lessons-manager")}

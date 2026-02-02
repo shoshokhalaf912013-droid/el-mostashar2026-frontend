@@ -12,16 +12,15 @@ import SuperStatistics from "../pages/superadmin/SuperStatistics";
 import UsersManagement from "../pages/superadmin/UsersManagement";
 import StudentsManagement from "../pages/superadmin/StudentsManagement";
 
-// 🔐 الصفحة الصامتة (الزر المخفي)
 import SecureRoleControl from "../pages/superadmin/SecureRoleControl";
+import CriticalPermissions from "../pages/superadmin/CriticalPermissions";
+import SuperAdminNotFound from "../pages/superadmin/SuperAdminNotFound";
 
-// ✅ الحارس
 import RequireRole from "../components/shared/RequireRole";
 
 export default function SuperAdminRoutes() {
   return (
     <Routes>
-      {/* 👑 كل مسارات السوبر أدمن محمية هنا */}
       <Route
         element={
           <RequireRole allowedRoles={["super-admin"]}>
@@ -29,28 +28,34 @@ export default function SuperAdminRoutes() {
           </RequireRole>
         }
       >
-        {/* 🏠 Dashboard */}
+        {/* Dashboard */}
         <Route index element={<SuperAdminHome />} />
         <Route path="dashboard" element={<SuperAdminHome />} />
 
-        {/* 👨‍🏫 المدرسين */}
+        {/* Teachers */}
         <Route path="add-teacher" element={<AddTeacher />} />
         <Route path="edit-teacher/:id" element={<EditTeacher />} />
         <Route path="manage-teachers" element={<ManageTeachers />} />
 
-        {/* 👥 المستخدمين والطلاب */}
+        {/* Users */}
         <Route path="users" element={<UsersManagement />} />
         <Route path="students" element={<StudentsManagement />} />
 
-        {/* 📝 الامتحانات */}
+        {/* Exams */}
         <Route path="add-exam" element={<AddExam />} />
         <Route path="manage-exams" element={<ManageExams />} />
 
-        {/* 📊 إحصائيات */}
+        {/* Statistics */}
         <Route path="statistics" element={<SuperStatistics />} />
 
-        {/* 🔐 Route صامت – لا يظهر في أي Sidebar */}
+        {/* 🔐 Secure controls */}
         <Route path="__secure-control" element={<SecureRoleControl />} />
+
+        {/* ☠️ Critical permissions */}
+        <Route path="__critical" element={<CriticalPermissions />} />
+
+        {/* ⛔ Super Admin 404 — داخلي وأنيق */}
+        <Route path="*" element={<SuperAdminNotFound />} />
       </Route>
     </Routes>
   );

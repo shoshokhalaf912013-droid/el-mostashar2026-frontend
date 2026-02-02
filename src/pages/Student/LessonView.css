@@ -1,0 +1,10 @@
+.lessons-container {
+  padding: 30px 0;
+}
+
+.lessons-empty {
+  text-align: center;
+  color: #aaa;
+  margin-top: 60px;
+  font-size: 18px;
+}

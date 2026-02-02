@@ -1,182 +1,122 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   collection,
   query,
   where,
-  orderBy,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
+
 import { db } from "../../firebase";
-import { useAuth } from "../../contexts/AuthContext";
+import UnitCard from "./UnitCard";
+import { generateUnits } from "../../utils/generateUnits";
 
 export default function UnitsView() {
-  const { gradeId, subjectKey } = useParams();
   const navigate = useNavigate();
-  const { isSuperAdmin, isStudent } = useAuth();
+  const { gradeId, subjectId, trackId } = useParams();
 
   const [units, setUnits] = useState([]);
-  const [newUnitTitle, setNewUnitTitle] = useState("");
   const [loading, setLoading] = useState(true);
 
-  /* ================= تحميل الوحدات ================= */
+  // =============================
+  // تحميل الوحدات (ثابت لا يُمس)
+  // =============================
   useEffect(() => {
-    if (!gradeId || !subjectKey) return;
+    if (!gradeId || !subjectId) {
+      setUnits([]);
+      setLoading(false);
+      return;
+    }
 
-    const loadUnits = async () => {
-      try {
-        setLoading(true);
+    const conditions = [
+      where("gradeId", "==", gradeId),
+      where("subjectId", "==", subjectId),
+      where("active", "==", true),
+    ];
 
-        const snap = await getDocs(
-          query(
-            collection(db, "units"),
-            where("gradeId", "==", gradeId),
-            where("subjectKey", "==", subjectKey),
-            orderBy("unitNumber")
-          )
-        );
+    if (trackId) {
+      conditions.push(where("trackId", "==", trackId));
+    }
 
-        setUnits(
-          snap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-          }))
-        );
-      } catch (err) {
-        console.error("❌ خطأ تحميل الوحدات:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const q = query(collection(db, "units"), ...conditions);
 
-    loadUnits();
-  }, [gradeId, subjectKey]);
+    const unsub = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  /* ================= إضافة وحدة ================= */
-  const addUnit = async () => {
-    if (!newUnitTitle.trim()) return;
+      setUnits(data);
+      setLoading(false);
+    });
 
+    return () => unsub();
+  }, [gradeId, subjectId, trackId]);
+
+  // =============================
+  // إضافة وحدة واحدة فقط
+  // =============================
+  const handleGenerateUnits = async () => {
     try {
-      await addDoc(collection(db, "units"), {
-        title: newUnitTitle,
+      await generateUnits({
         gradeId,
-        subjectKey,
-        unitNumber: units.length + 1,
-        createdAt: serverTimestamp(),
+        stageId: units[0]?.stageId || "secondary",
+        subjectId,
+        systemId: units[0]?.systemId || "general",
+        trackId: trackId || null,
       });
-
-      setNewUnitTitle("");
-      window.location.reload();
     } catch (err) {
-      console.error("❌ خطأ إضافة وحدة:", err);
+      console.error("❌ Add unit failed:", err);
     }
   };
 
-  /* ================= حذف وحدة (سوبر أدمن فقط) ================= */
-  const deleteUnit = async (unitId) => {
-    if (!isSuperAdmin) return;
-
-    const confirmDelete = window.confirm(
-      "⚠️ هل أنت متأكد من حذف الوحدة؟ سيتم حذف كل الدروس التابعة لها."
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      await deleteDoc(doc(db, "units", unitId));
-      setUnits(units.filter((u) => u.id !== unitId));
-    } catch (err) {
-      console.error("❌ خطأ حذف الوحدة:", err);
-    }
-  };
-
-  /* ================= حالات العرض ================= */
   if (loading) {
     return (
-      <div className="text-yellow-400 text-center mt-20">
-        جاري تحميل الوحدات...
+      <div className="units-page">
+        <div style={{ color: "#fff", textAlign: "center" }}>
+          جاري التحميل...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white px-6 py-10" dir="rtl">
-      <h1 className="text-2xl font-bold text-yellow-400 text-center mb-10">
-        الوحدات
-      </h1>
+    <div className="units-page">
+      <h2 className="units-title">الوحدات</h2>
 
-      {/* ================= إضافة وحدة ================= */}
-      {!isStudent && (
-        <div className="mb-10 bg-gray-900 p-6 rounded-xl border border-gray-700">
-          <div className="flex gap-4">
-            <input
-              value={newUnitTitle}
-              onChange={(e) => setNewUnitTitle(e.target.value)}
-              placeholder="اسم الوحدة"
-              className="flex-1 px-4 py-3 rounded bg-black border border-gray-600 text-white"
-            />
-            <button
-              onClick={addUnit}
-              className="bg-green-500 text-black px-6 py-3 rounded font-bold"
-            >
-              + إضافة وحدة
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ================= كروت الوحدات ================= */}
-      {units.length === 0 ? (
-        <div className="text-red-400 text-center">
-          لا توجد وحدات مضافة
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {units.map((unit) => (
-            <div
-              key={unit.id}
-              className="bg-gray-900 p-6 rounded-xl border border-yellow-700"
-            >
-              <div
-                onClick={() =>
-                  navigate(
-                    `/student/lessons/${gradeId}/${subjectKey}/${unit.id}`
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <h2 className="text-lg font-extrabold text-yellow-300 mb-4">
-                  {unit.title}
-                </h2>
-              </div>
-
-              {/* ===== أزرار الإدارة ===== */}
-              {isSuperAdmin && (
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={() => deleteUnit(unit.id)}
-                    className="bg-red-600 px-4 py-2 rounded font-bold"
-                  >
-                    حذف
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="text-center mt-16">
+      {/* زر الإضافة */}
+      <div style={{ textAlign: "center", marginBottom: "40px" }}>
         <button
-          onClick={() => navigate(-1)}
-          className="bg-yellow-500 text-black px-8 py-3 rounded font-bold"
+          onClick={handleGenerateUnits}
+          style={{
+            padding: "12px 22px",
+            background: "#0f9d58",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "15px",
+            cursor: "pointer",
+          }}
         >
-          رجوع
+          + إضافة وحدة
         </button>
+      </div>
+
+      {/* شبكة الوحدات */}
+      <div className="units-grid">
+        {units.map((unit) => (
+          <UnitCard
+            key={unit.id}
+            unit={unit}
+            onClick={() =>
+              navigate(
+                `/student/secondary/lessons/${gradeId}/${subjectId}/${unit.unitId}`
+              )
+            }
+          />
+        ))}
       </div>
     </div>
   );

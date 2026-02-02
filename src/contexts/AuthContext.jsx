@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { PLATFORM_OWNER_EMAIL } from "../config/owner";
 
 const AuthContext = createContext(null);
 
-// 🔒 تطبيع صارم للأدوار (للعرض فقط)
+// ===== تطبيع الدور (عرض فقط) =====
 const normalizeRole = (role) => {
   if (!role) return null;
 
@@ -14,9 +14,9 @@ const normalizeRole = (role) => {
 
   if (["superadmin", "super-admin", "super_admin"].includes(r))
     return "super-admin";
-  if (["admin"].includes(r)) return "admin";
-  if (["teacher"].includes(r)) return "teacher";
-  if (["student"].includes(r)) return "student";
+  if (r === "admin") return "admin";
+  if (r === "teacher") return "teacher";
+  if (r === "student") return "student";
 
   return null;
 };
@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
 
       if (!currentUser) {
@@ -36,26 +36,22 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      const ref = doc(db, "users", currentUser.uid);
-
-      // 👑 مالك المنصة = سوبر أدمن (بالإيميل فقط)
       const isOwner =
         currentUser.email &&
         currentUser.email.toLowerCase().trim() ===
           PLATFORM_OWNER_EMAIL.toLowerCase().trim();
 
+      // 👑 السوبر أدمن لا يدخل Firestore رول ولا طالب
       if (isOwner) {
-        await setDoc(
-          ref,
-          {
-            role: "super-admin", // للعرض فقط
-            email: currentUser.email,
-          },
-          { merge: true }
-        );
+        setRole("super-admin");
+        setLoading(false);
+        return;
       }
 
-      const unsubRole = onSnapshot(ref, async (snap) => {
+      // ===== باقي المستخدمين =====
+      const ref = doc(db, "users", currentUser.uid);
+
+      const unsubUser = onSnapshot(ref, (snap) => {
         if (!snap.exists()) {
           setRole(null);
           setLoading(false);
@@ -63,27 +59,11 @@ export function AuthProvider({ children }) {
         }
 
         const data = snap.data();
-        const normalizedRole = normalizeRole(data.role);
-        setRole(normalizedRole);
-
-        // 🧯 تهيئة آمنة للطالب فقط
-        if (normalizedRole === "student" && data.stageId === undefined) {
-          await setDoc(
-            ref,
-            {
-              stageId: null,
-              gradeId: null,
-              subjectId: null,
-              teacherId: null,
-            },
-            { merge: true }
-          );
-        }
-
+        setRole(normalizeRole(data.role));
         setLoading(false);
       });
 
-      return () => unsubRole();
+      return () => unsubUser();
     });
 
     return () => unsubAuth();
@@ -96,9 +76,11 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
-    role, // للعرض فقط
+    role, // عرض فقط
     loading,
-    isSuperAdmin, // 👑 التحكم الحقيقي
+
+    // ===== تحكم حقيقي =====
+    isSuperAdmin,
     isAdmin: role === "admin",
     isTeacher: role === "teacher",
     isStudent: role === "student",
@@ -111,7 +93,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// 🧠 Hook موحد
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");

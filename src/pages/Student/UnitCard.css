@@ -1,0 +1,88 @@
+/* الكارت = زر حقيقي */
+.unit-card {
+  width: 100%;
+  max-width: 520px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  padding: 36px 32px;
+  margin: 0 auto 24px;
+
+  border-radius: 26px;
+  background: linear-gradient(160deg, #0b0b0b, #000);
+  border: 2px solid rgba(212, 175, 55, 0.55);
+
+  cursor: pointer;
+  transition: all 0.35s ease;
+
+  text-align: center;
+  outline: none;
+}
+
+/* إحساس زر */
+.unit-card:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow:
+    0 12px 40px rgba(212, 175, 55, 0.25),
+    inset 0 0 0 rgba(0,0,0,0);
+}
+
+.unit-card:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+/* شارة UNIT */
+.unit-badge {
+  position: relative;
+  padding: 6px 20px;
+  border-radius: 22px;
+  background: #000;
+
+  color: #d4af37;
+  font-size: 13px;
+  letter-spacing: 2px;
+  font-weight: 600;
+
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+
+/* اللمعة */
+.unit-shine {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 215, 0, 0.85),
+    transparent
+  );
+  animation: shineMove 3.8s ease-in-out infinite;
+}
+
+@keyframes shineMove {
+  0% { left: -40%; }
+  50% { left: 120%; }
+  100% { left: 120%; }
+}
+
+/* لوحة العنوان */
+.unit-title-plate {
+  width: 100%;
+  background: linear-gradient(180deg, #f7e27c, #d4af37);
+  border-radius: 16px;
+  padding: 16px 22px;
+}
+
+/* النص */
+.unit-title-text {
+  color: #000;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.4;
+}

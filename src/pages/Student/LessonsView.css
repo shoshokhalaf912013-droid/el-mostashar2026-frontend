@@ -1,0 +1,20 @@
+.lessons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.add-lesson-btn {
+  padding: 10px 20px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #d4af37, #f5d76e);
+  color: #000;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.add-lesson-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+}

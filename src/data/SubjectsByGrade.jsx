@@ -8,7 +8,7 @@ const SubjectsByGrade = {
 
   p2: {
     commonAdded: ["اللغة العربية", "اللغة الإنجليزية", "الرياضيات", "متعدد التخصصات"],
-    commonNotAdded: ["التربية الدينية", "الأنشطة"],
+    commonNotAdded: [التربية الدينية"],
   },
 
   p3: {

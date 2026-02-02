@@ -1,70 +1,79 @@
-import { Link, useLocation } from "react-router-dom";
-import { getAuth } from "firebase/auth";
+import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  BookOpen,
+  Layers,
+  CreditCard,
+  DollarSign,
+  BarChart3,
+  Settings,
+  AlertTriangle,
+} from "lucide-react";
 
 export default function Sidebar() {
-  const { pathname } = useLocation();
-
-  const auth = getAuth();
-  const user = auth.currentUser;
-
-  // 🔐 إيميل مالك المنصة فقط
-  const OWNER_EMAIL = "khalafmahrous2000@gmail.com";
-
-  const isOwner =
-    user &&
-    user.email &&
-    user.email.toLowerCase() === OWNER_EMAIL.toLowerCase();
-
-  const MenuItem = ({ to, label }) => {
-    const active = pathname.startsWith(to);
-
-    return (
-      <Link
-        to={to}
-        className={`block p-3 rounded-lg transition 
-        ${
-          active
-            ? "bg-yellow-500 text-black"
-            : "bg-gray-800 hover:bg-gray-700 text-white"
-        }`}
-      >
-        {label}
-      </Link>
-    );
-  };
+  const base =
+    "flex items-center gap-3 px-4 py-3 rounded-lg transition hover:bg-gray-800";
+  const active = "bg-gray-800 text-yellow-400";
 
   return (
-    <div className="w-64 bg-gray-900 p-4 border-r border-gray-700 min-h-screen">
-      <h2 className="text-xl font-bold mb-6 text-yellow-400">
+    <aside className="w-64 bg-[#0b0b0b] border-r border-gray-800 min-h-screen p-4">
+      <h2 className="text-xl font-bold text-yellow-400 mb-6 text-center">
         👑 Super Admin
       </h2>
 
-      <nav className="space-y-3">
-        <MenuItem to="/super-admin/dashboard" label="لوحة التحكم" />
+      {/* 🟢 الإدارة اليومية */}
+      <div className="text-gray-400 text-sm mb-2">الإدارة اليومية</div>
 
-        <MenuItem to="/super-admin/users" label="إدارة المستخدمين" />
-        <MenuItem to="/super-admin/teachers" label="إدارة المدرسين" />
-        <MenuItem to="/super-admin/students" label="إدارة الطلاب" />
+      <NavLink to="/super-admin/dashboard" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <LayoutDashboard size={18} /> لوحة التحكم
+      </NavLink>
 
-        <MenuItem to="/super-admin/lessons" label="إدارة الدروس" />
-        <MenuItem to="/super-admin/exams" label="إدارة الاختبارات" />
+      <NavLink to="/super-admin/students" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <GraduationCap size={18} /> إدارة الطلاب
+      </NavLink>
 
-        <MenuItem to="/super-admin/payments" label="الدفع والاشتراكات" />
-        <MenuItem to="/super-admin/plans" label="الباقات" />
-        <MenuItem to="/super-admin/settings" label="إعدادات الموقع" />
+      <NavLink to="/super-admin/manage-teachers" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <Users size={18} /> إدارة المدرسين
+      </NavLink>
 
-        {/* 🔒 زر صامت + مخفي — للمالك فقط */}
-        {isOwner && (
-          <>
-            <div className="border-t border-gray-700 my-4"></div>
+      <NavLink to="/super-admin/lessons" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <BookOpen size={18} /> إدارة الدروس
+      </NavLink>
 
-            <MenuItem
-              to="/super-admin/users"
-              label="⚠️ التحكم في الصلاحيات (خاص)"
-            />
-          </>
-        )}
-      </nav>
-    </div>
+      <NavLink to="/super-admin/units" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <Layers size={18} /> الوحدات التعليمية
+      </NavLink>
+
+      <NavLink to="/super-admin/payments" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <DollarSign size={18} /> المدفوعات
+      </NavLink>
+
+      <NavLink to="/super-admin/subscriptions" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <CreditCard size={18} /> الباقات والاشتراكات
+      </NavLink>
+
+      {/* 🟡 إدارة متقدمة */}
+      <div className="text-gray-400 text-sm mt-6 mb-2">إدارة متقدمة</div>
+
+      <NavLink to="/super-admin/statistics" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <BarChart3 size={18} /> الإحصائيات
+      </NavLink>
+
+      <NavLink to="/super-admin/settings" className={({ isActive }) => `${base} ${isActive ? active : ""}`}>
+        <Settings size={18} /> الإعدادات
+      </NavLink>
+
+      {/* 🔴 غرفة العمليات */}
+      <div className="mt-8 border-t border-gray-800 pt-4">
+        <NavLink
+          to="/super-admin/__critical"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/30"
+        >
+          <AlertTriangle size={18} /> غرفة العمليات
+        </NavLink>
+      </div>
+    </aside>
   );
 }
