@@ -12,7 +12,8 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase";
 
-import UnitCard from "../student/UnitCard";
+import UnitCard from "../Student/UnitCard";
+
 
 export default function UnitsViewSuperAdmin() {
   const { systemId, gradeId, subjectId } = useParams();
