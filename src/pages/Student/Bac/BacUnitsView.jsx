@@ -6,193 +6,169 @@ import {
   query,
   where,
   addDoc,
-  serverTimestamp,
+  doc,
+  getDoc,
 } from "firebase/firestore";
+
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "../../../firebase";
 import UnitCard from "../UnitCard";
-
-/* مواد بكالوريا خاصة فقط */
-const BAC_ONLY_SUBJECTS = [
-  "economics",
-  "accounting",
-  "businessAdministration",
-  "programming",
-];
-
-/* تحويل الصف */
-const BAC_TO_SECONDARY = {
-  bac2: "sec2",
-  bac3: "sec3",
-};
+import { generateUnitTitle } from "@/utils/generateUnitTitle";
 
 export default function BacUnitsView() {
+
   const { gradeId, subjectId } = useParams();
   const navigate = useNavigate();
 
   const [units, setUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [canManageUnits, setCanManageUnits] = useState(false);
 
-  const [showAdd, setShowAdd] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
+  /* ================= REAL AUTH CHECK ================= */
 
   useEffect(() => {
+
+    const unsubscribe = onAuthStateChanged(
+      getAuth(),
+      async (user) => {
+
+        console.log("========== AUTH DEBUG ==========");
+
+        if (!user) {
+          console.log("NO USER");
+          setCanManageUnits(false);
+          return;
+        }
+
+        console.log("AUTH UID =", user.uid);
+        console.log("AUTH EMAIL =", user.email);
+
+        try {
+
+          const ref = doc(db, "users", user.uid);
+          const snap = await getDoc(ref);
+
+          if (!snap.exists()) {
+            console.log("USER DOC NOT FOUND");
+            setCanManageUnits(false);
+            return;
+          }
+
+          const role = snap.data().role;
+
+          console.log("FIRESTORE ROLE =", role);
+
+          const allow =
+            role === "super-admin" || role === "admin";
+
+          console.log("CAN MANAGE =", allow);
+
+          setCanManageUnits(allow);
+
+        } catch (err) {
+          console.error("ROLE LOAD ERROR:", err);
+          setCanManageUnits(false);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+
+  }, []);
+
+  /* ================= LOAD UNITS ================= */
+
+  useEffect(() => {
+    if (!gradeId || !subjectId) return;
     loadUnits();
-    // eslint-disable-next-line
   }, [gradeId, subjectId]);
 
   async function loadUnits() {
-    setLoading(true);
 
-    try {
-      const isBacOnly = BAC_ONLY_SUBJECTS.includes(subjectId);
+    const q = query(
+      collection(db, "units"),
+      where("systemId", "==", "bac"),
+      where("gradeId", "==", gradeId),
+      where("subjectId", "==", subjectId),
+      where("active", "==", true)
+    );
 
-      let generalUnits = [];
-      let bacUnits = [];
+    const snap = await getDocs(q);
 
-      /* ================= GENERAL ================= */
-      if (!isBacOnly) {
-        const sourceGrade = BAC_TO_SECONDARY[gradeId];
+    const data = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        const generalQ = query(
-          collection(db, "units"),
-          where("active", "==", true),
-          where("systemId", "==", "general"),
-          where("subjectId", "==", subjectId),
-          where("unitsSourceGrade", "==", sourceGrade)
-        );
-
-        const snap = await getDocs(generalQ);
-        generalUnits = snap.docs.map(d => ({
-          id: d.id,
-          ...d.data(),
-        }));
-      }
-
-      /* ================= BAC ================= */
-      const bacQ = query(
-        collection(db, "units"),
-        where("active", "==", true),
-        where("systemId", "==", "bac"),
-        where("gradeId", "==", gradeId),
-        where("subjectId", "==", subjectId)
-      );
-
-      const bacSnap = await getDocs(bacQ);
-      bacUnits = bacSnap.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-      }));
-
-      const finalUnits = [...generalUnits, ...bacUnits].sort(
-        (a, b) => (a.order || 0) - (b.order || 0)
-      );
-
-      setUnits(finalUnits);
-    } catch (err) {
-      console.error("❌ Load units error:", err);
-      setUnits([]);
-    } finally {
-      setLoading(false);
-    }
+    setUnits(data);
   }
 
-  /* ================= ADD ONE UNIT ONLY ================= */
+  /* ================= ADD UNIT ================= */
+
   async function handleAddUnit() {
-    if (!newTitle.trim()) return;
 
-    try {
-      const maxOrder =
-        units.length > 0
-          ? Math.max(...units.map(u => Number(u.order || 0)))
-          : 0;
+    if (!canManageUnits) return;
 
-      const nextOrder = maxOrder + 1;
+    const nextOrder =
+      units.length > 0
+        ? Math.max(...units.map(u => Number(u.order || 0))) + 1
+        : 1;
 
-      await addDoc(collection(db, "units"), {
-        unitId: `unit-${nextOrder}`,
-        order: nextOrder,
-        title: newTitle.trim(),
-        active: true,
+    await addDoc(collection(db, "units"), {
+      order: nextOrder,
+      unitId: `unit-${nextOrder}`,
+      title: generateUnitTitle(nextOrder, subjectId),
+      active: true,
+      gradeId,
+      subjectId,
+      systemId: "bac",
+      stageId: "secondary",
+    });
 
-        gradeId,
-        subjectId,
-        stageId: "bac",
-        systemId: "bac",
-        trackId: null,
-
-        source: "real",
-        createdAt: serverTimestamp(),
-      });
-
-      setNewTitle("");
-      setShowAdd(false);
-      loadUnits();
-    } catch (err) {
-      console.error("❌ Add unit failed:", err);
-    }
+    loadUnits();
   }
 
-  /* ================= RENDER ================= */
-  if (loading) {
-    return <div className="p-10 text-white">جاري تحميل الوحدات…</div>;
-  }
+  /* ================= UI ================= */
 
   return (
-    <div className="p-10 space-y-6 text-white">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">الوحدات</h2>
+    <div className="bg-black min-h-screen px-6 py-10 text-white">
 
-        <button
-          onClick={() => setShowAdd(true)}
-          className="px-4 py-2 rounded-lg bg-yellow-400 text-black font-bold hover:bg-yellow-300 transition"
-        >
-          + إضافة وحدة
-        </button>
-      </div>
+      <div className="max-w-5xl mx-auto space-y-8">
 
-      {showAdd && (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 space-y-4">
-          <input
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            placeholder="عنوان الوحدة (عربي / English)"
-            className="w-full px-4 py-2 rounded bg-black border border-zinc-700 text-white"
-          />
+        <div className="flex justify-between items-center">
 
-          <div className="flex gap-3">
+          <h2 className="text-2xl font-bold">
+            الوحدات (البكالوريا)
+          </h2>
+
+          {canManageUnits && (
             <button
               onClick={handleAddUnit}
-              className="px-4 py-2 bg-green-600 rounded hover:bg-green-500"
+              className="px-4 py-2 bg-yellow-400 text-black rounded-lg font-bold"
             >
-              حفظ
+              + إضافة وحدة
             </button>
-            <button
-              onClick={() => setShowAdd(false)}
-              className="px-4 py-2 bg-zinc-700 rounded"
-            >
-              إلغاء
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {!units.length ? (
-        <div className="text-zinc-400">لا توجد وحدات حالياً</div>
-      ) : (
-        <div className="space-y-4">
-          {units.map(unit => (
+        </div>
+
+        <div className="flex flex-col gap-8">
+
+          {units.map((unit) => (
             <UnitCard
               key={unit.id}
               unit={unit}
+              canManageUnits={canManageUnits}
               onClick={() =>
                 navigate(
-                  `/student/bac/lessons/${gradeId}/${subjectId}/${unit.unitId}`
+                  `/student/secondary/lessons/${gradeId}/${subjectId}/${unit.unitId}`
                 )
               }
             />
           ))}
+
         </div>
-      )}
+
+      </div>
+
     </div>
   );
 }

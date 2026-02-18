@@ -3,18 +3,27 @@ import { Routes, Route } from "react-router-dom";
 import SuperAdminLayout from "../pages/superadmin/SuperAdminLayout";
 import SuperAdminHome from "../pages/superadmin/SuperAdminHome";
 
-import AddExam from "../pages/superadmin/AddExam";
 import AddTeacher from "../pages/superadmin/AddTeacher";
 import EditTeacher from "../pages/superadmin/EditTeacher";
-import ManageExams from "../pages/superadmin/ManageExams";
 import ManageTeachers from "../pages/superadmin/ManageTeachers";
-import SuperStatistics from "../pages/superadmin/SuperStatistics";
+
 import UsersManagement from "../pages/superadmin/UsersManagement";
 import StudentsManagement from "../pages/superadmin/StudentsManagement";
+
+import AddExam from "../pages/superadmin/AddExam";
+import ManageExams from "../pages/superadmin/ManageExams";
+
+import SuperStatistics from "../pages/superadmin/SuperStatistics";
+
+import UnitsViewSuperAdmin from "../pages/superadmin/UnitsViewSuperAdmin";
+import AddLesson from "../pages/superadmin/AddLesson";
 
 import SecureRoleControl from "../pages/superadmin/SecureRoleControl";
 import CriticalPermissions from "../pages/superadmin/CriticalPermissions";
 import SuperAdminNotFound from "../pages/superadmin/SuperAdminNotFound";
+
+/* 🔐 صفحة الاختبار */
+import TestPermissions from "../pages/superadmin/TestPermissions";
 
 import RequireRole from "../components/shared/RequireRole";
 
@@ -28,7 +37,6 @@ export default function SuperAdminRoutes() {
           </RequireRole>
         }
       >
-        {/* Dashboard */}
         <Route index element={<SuperAdminHome />} />
         <Route path="dashboard" element={<SuperAdminHome />} />
 
@@ -48,13 +56,32 @@ export default function SuperAdminRoutes() {
         {/* Statistics */}
         <Route path="statistics" element={<SuperStatistics />} />
 
-        {/* 🔐 Secure controls */}
-        <Route path="__secure-control" element={<SecureRoleControl />} />
+        {/* Units */}
+        <Route
+          path="units/:systemId/:gradeId/:subjectId"
+          element={<UnitsViewSuperAdmin />}
+        />
 
-        {/* ☠️ Critical permissions */}
+        {/* 🔥 ADD LESSON (SHARED) */}
+        <Route
+          path="add-lesson/:systemId/:gradeId/:subjectId/:unitId"
+          element={
+            <RequireRole allowedRoles={["super-admin", "admin", "teacher"]}>
+              <AddLesson />
+            </RequireRole>
+          }
+        />
+
+        {/* 🔍 TEST PERMISSIONS (SUPER ADMIN ONLY) */}
+        <Route
+          path="__test-permissions"
+          element={<TestPermissions />}
+        />
+
+        {/* Secure */}
+        <Route path="__secure-control" element={<SecureRoleControl />} />
         <Route path="__critical" element={<CriticalPermissions />} />
 
-        {/* ⛔ Super Admin 404 — داخلي وأنيق */}
         <Route path="*" element={<SuperAdminNotFound />} />
       </Route>
     </Routes>

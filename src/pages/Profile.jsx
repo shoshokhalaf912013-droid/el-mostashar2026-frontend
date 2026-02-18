@@ -1,10 +1,28 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { getAuth, signOut } from "firebase/auth";
 
 export default function Profile() {
   const { user, role } = useAuth();
 
   if (!user) return null;
+
+  /* =========================
+     LOGOUT REAL (Firebase)
+  ========================== */
+  const logoutNow = async () => {
+    try {
+      await signOut(getAuth());
+
+      console.log("✅ USER LOGGED OUT COMPLETELY");
+
+      // إعادة تحميل التطبيق لمسح أى Session
+      window.location.reload();
+    } catch (err) {
+      console.error("❌ Logout Error:", err);
+   _toggle
+    }
+  };
 
   const roleName = {
     "super-admin": "مدير النظام (سوبر أدمن)",
@@ -15,7 +33,10 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto">
+
+      {/* ===== CARD ===== */}
       <div className="card mb-4 flex items-center gap-6">
+
         <img
           src={user.photoURL || "/teacher.png"}
           alt="profile"
@@ -37,6 +58,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* ===== STUDENT DATA ===== */}
       {role === "student" && (
         <div className="card">
           <h4 className="font-semibold mb-2">تقدم الطالب</h4>
@@ -47,6 +69,17 @@ export default function Profile() {
           </ul>
         </div>
       )}
+
+      {/* ===== REAL LOGOUT BUTTON ===== */}
+      <div className="mt-6 text-center">
+        <button
+          onClick={logoutNow}
+          className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold"
+        >
+          تسجيل خروج حقيقى
+        </button>
+      </div>
+
     </div>
   );
 }

@@ -4,6 +4,11 @@ import {
   collection,
   addDoc,
   serverTimestamp,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs
 } from "firebase/firestore";
 import { db } from "../../../firebase";
 import "./AddUnitModal.css";
@@ -13,36 +18,59 @@ export default function AddUnitModal({
   onClose,
   gradeId,
   subjectId,
+  systemId = "general",
   trackId = null,
 }) {
-  const [title, setTitle] = useState("");
-  const [order, setOrder] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!open) return null;
 
-  const handleSubmit = async () => {
-    if (!title || !order) return;
+  // تحويل رقم الوحدة إلى اسم
+  const arabicNames = ["الأولى","الثانية","الثالثة","الرابعة","الخامسة","السادسة"];
+  const englishNames = ["One","Two","Three","Four","Five","Six"];
 
+  const isArabicSubject = subjectId === "arabic" || subjectId === "religionIslamic" || subjectId === "religionChristian";
+
+  const handleSubmit = async () => {
     setLoading(true);
 
     try {
+      // 🔹 احضر آخر ترتيب
+      const q = query(
+        collection(db, "units"),
+        where("gradeId", "==", gradeId),
+        where("subjectId", "==", subjectId),
+        where("systemId", "==", systemId),
+        orderBy("order", "desc"),
+        limit(1)
+      );
+
+      const snap = await getDocs(q);
+      let nextOrder = 1;
+
+      if (!snap.empty) {
+        nextOrder = snap.docs[0].data().order + 1;
+      }
+
+      // 🔹 عنوان تلقائي
+      const titleAr = `الوحدة ${arabicNames[nextOrder - 1] || nextOrder}`;
+      const titleEn = `Unit ${englishNames[nextOrder - 1] || nextOrder}`;
+
       const data = {
-        title: title.trim(),
-        order: Number(order),
         gradeId,
         subjectId,
+        systemId,
+        trackId: trackId || null,
+        order: nextOrder,
+        titleAr,
+        titleEn,
         active: true,
+        deleted: false,
         createdAt: serverTimestamp(),
       };
 
-      // trackId اختياري (للبكالوريا فقط)
-      if (trackId) data.trackId = trackId;
-
       await addDoc(collection(db, "units"), data);
 
-      setTitle("");
-      setOrder("");
       onClose();
     } catch (err) {
       console.error("Add unit error:", err);
@@ -54,35 +82,18 @@ export default function AddUnitModal({
   return (
     <div className="add-unit-overlay">
       <div className="add-unit-modal">
-        <h3>إضافة وحدة جديدة</h3>
+        <h3>إضافة وحدة تلقائية</h3>
 
-        <input
-          type="text"
-          placeholder="عنوان الوحدة"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <input
-          type="number"
-          placeholder="ترتيب الوحدة"
-          value={order}
-          onChange={(e) => setOrder(e.target.value)}
-        />
+        <p style={{color:"#aaa",fontSize:13}}>
+          سيتم الترتيب والتسمية تلقائيًا
+        </p>
 
         <div className="add-unit-actions">
-          <button
-            className="btn-gold"
-            onClick={handleSubmit}
-            disabled={loading}
-          >
-            {loading ? "جارٍ الحفظ..." : "إضافة"}
+          <button className="btn-gold" onClick={handleSubmit} disabled={loading}>
+            {loading ? "جارٍ الإضافة..." : "إضافة وحدة"}
           </button>
 
-          <button
-            className="btn-cancel"
-            onClick={onClose}
-          >
+          <button className="btn-cancel" onClick={onClose}>
             إلغاء
           </button>
         </div>
@@ -96,5 +107,6 @@ AddUnitModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   gradeId: PropTypes.string.isRequired,
   subjectId: PropTypes.string.isRequired,
+  systemId: PropTypes.string,
   trackId: PropTypes.string,
 };

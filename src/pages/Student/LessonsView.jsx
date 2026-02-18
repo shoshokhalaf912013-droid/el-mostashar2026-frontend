@@ -1,116 +1,311 @@
+import "./LessonsView.css";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+
 import {
   collection,
   query,
-  where,
   orderBy,
   onSnapshot,
+  addDoc,
+  deleteDoc,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  getDocs,
+  getDoc,
 } from "firebase/firestore";
-import { motion } from "framer-motion";
 
-import { db } from "../../firebase";
-import { useAuth } from "../../contexts/AuthContext";
-
-import LessonCard from "./LessonCard";
-import AddLessonModal from "../Dashboard/Lessons/AddLessonModal";
-
-/* 🟡 زر ذهبي موحّد */
-import GoldActionButton from "../../components/ui/GoldActionButton";
-
-import "./LessonsView.css";
+import { db } from "@/firebase";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getLessonTitle } from "@/utils/getLessonTitle";
 
 export default function LessonsView() {
+
   const { gradeId, subjectId, unitId } = useParams();
-  const { isSuperAdmin, isAdmin, isTeacher } = useAuth();
+  const navigate = useNavigate();
 
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [openAdd, setOpenAdd] = useState(false);
 
-  /* ===== صلاحية الإضافة ===== */
-  const canAddLesson = isSuperAdmin || isAdmin || isTeacher;
+  // ⭐ صلاحيات
+  const [role, setRole] = useState(null);
 
-  /* ===== جلب الدروس ===== */
+  /* ================= LOAD ROLE ================= */
+
   useEffect(() => {
-    if (!unitId) return;
 
-    setLoading(true);
+    const auth = getAuth();
 
-    const q = query(
-      collection(db, "lessons"),
-      where("gradeId", "==", gradeId),
-      where("subjectId", "==", subjectId),
-      where("unitId", "==", unitId),
-      where("active", "==", true),
-      orderBy("lessonOrder", "asc")
-    );
+    const unsub = onAuthStateChanged(auth, async (user) => {
 
-    const unsub = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setLessons(data);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("❌ Lessons snapshot error:", error);
-        setLessons([]);
-        setLoading(false);
+      if (!user) {
+        setRole("student");
+        return;
       }
-    );
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+
+        if (snap.exists()) {
+          setRole(snap.data().role || "student");
+        } else {
+          setRole("student");
+        }
+
+      } catch (e) {
+        console.error(e);
+        setRole("student");
+      }
+    });
 
     return () => unsub();
+
+  }, []);
+
+  const isAdmin =
+    role === "admin" || role === "super-admin";
+
+  /* ================= REALTIME LESSONS ================= */
+
+  useEffect(() => {
+
+    if (!gradeId || !subjectId || !unitId) return;
+
+    const lessonsRef = collection(
+      db,
+      "grades",
+      gradeId,
+      "subjects",
+      subjectId,
+      "units",
+      unitId,
+      "lessons"
+    );
+
+    const q = query(lessonsRef, orderBy("order"));
+
+    const unsub = onSnapshot(q, (snapshot) => {
+
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setLessons(data);
+      setLoading(false);
+    });
+
+    return () => unsub();
+
   }, [gradeId, subjectId, unitId]);
 
+  /* ================= ADD ================= */
+
+  const handleAddLesson = async () => {
+
+    if (!isAdmin) return;
+
+    const lessonsRef = collection(
+      db,
+      "grades",
+      gradeId,
+      "subjects",
+      subjectId,
+      "units",
+      unitId,
+      "lessons"
+    );
+
+    const nextOrder =
+      lessons.length > 0
+        ? Math.max(...lessons.map(l => l.order || 0)) + 1
+        : 1;
+
+    await addDoc(lessonsRef, {
+      title: getLessonTitle(subjectId, nextOrder),
+      order: nextOrder,
+      videoUrl: "",
+      pdfUrl: "",
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  /* ================= DELETE ================= */
+
+  const handleDelete = async (lessonId) => {
+
+    if (!isAdmin) return;
+
+    await deleteDoc(
+      doc(
+        db,
+        "grades",
+        gradeId,
+        "subjects",
+        subjectId,
+        "units",
+        unitId,
+        "lessons",
+        lessonId
+      )
+    );
+  };
+
+  /* ================= EDIT ================= */
+
+  const handleEdit = async (lesson) => {
+
+    if (!isAdmin) return;
+
+    const newTitle = prompt("اسم الدرس", lesson.title);
+    if (!newTitle) return;
+
+    await updateDoc(
+      doc(
+        db,
+        "grades",
+        gradeId,
+        "subjects",
+        subjectId,
+        "units",
+        unitId,
+        "lessons",
+        lesson.id
+      ),
+      { title: newTitle }
+    );
+  };
+
+  /* ================= FIX ALL ================= */
+
+  const fixAllLessonsTitles = async () => {
+
+    if (!isAdmin) return;
+
+    const lessonsRef = collection(
+      db,
+      "grades",
+      gradeId,
+      "subjects",
+      subjectId,
+      "units",
+      unitId,
+      "lessons"
+    );
+
+    const snap = await getDocs(lessonsRef);
+
+    for (const d of snap.docs) {
+
+      const data = d.data();
+
+      const newTitle = getLessonTitle(
+        subjectId,
+        data.order || 1
+      );
+
+      await updateDoc(d.ref, { title: newTitle });
+    }
+
+    alert("✅ تم التصحيح");
+  };
+
+  /* ================= OPEN ================= */
+
+  const openLesson = (lessonId) => {
+    navigate(
+      `/student/primary-prep/lesson/${gradeId}/${subjectId}/${unitId}/${lessonId}`
+    );
+  };
+
+  if (loading) {
+    return <div className="lessons-container">Loading...</div>;
+  }
+
+  /* ================= UI ================= */
+
   return (
-    <div className="lessons-page">
-      {/* ===== Header ===== */}
-      <div className="lessons-header">
-        <h1 className="lessons-title">📘 الدروس</h1>
+    <div className="lessons-container">
 
-        {canAddLesson && (
-          <GoldActionButton onClick={() => setOpenAdd(true)}>
-            إضافة درس
-          </GoldActionButton>
-        )}
-      </div>
+      <button className="back-btn" onClick={() => navigate(-1)}>
+        ← رجوع
+      </button>
 
-      {/* ===== Content ===== */}
-      {loading ? (
-        <div className="lessons-loading">جارٍ تحميل الدروس…</div>
-      ) : lessons.length === 0 ? (
-        <div className="lessons-empty">لا توجد دروس بعد</div>
-      ) : (
-        <div className="lessons-list">
-          {lessons.map((lesson, index) => (
-            <motion.div
-              key={lesson.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.07 }}
-            >
-              <LessonCard
-                lesson={lesson}
-                index={index}
-              />
-            </motion.div>
-          ))}
+      <h1 className="lessons-title">الدروس</h1>
+
+      {/* ⭐ أزرار الإدارة فقط */}
+      {isAdmin && (
+        <div className="add-lesson-wrapper">
+
+          <button
+            className="add-lesson-btn"
+            onClick={handleAddLesson}
+          >
+            + إضافة درس
+          </button>
+
+          <button
+            className="add-lesson-btn"
+            style={{
+              marginInlineStart: "10px",
+              background:"#111",
+              color:"#FFD700",
+              border:"1px solid #FFD700"
+            }}
+            onClick={fixAllLessonsTitles}
+          >
+            🔄 تصحيح كل الدروس
+          </button>
+
         </div>
       )}
 
-      {/* ===== Add Lesson Modal ===== */}
-      {openAdd && (
-        <AddLessonModal
-          gradeId={gradeId}
-          subjectId={subjectId}
-          unitId={unitId}
-          onClose={() => setOpenAdd(false)}
-        />
-      )}
+      <div className="lessons-grid">
+
+        {lessons.map((lesson, index) => (
+
+          <div
+            key={lesson.id}
+            className="lesson-card"
+            onClick={() => openLesson(lesson.id)}
+          >
+
+            <div className="lesson-index-circle">
+              {index + 1}
+            </div>
+
+            {/* ⭐ أدوات الإدارة */}
+            {isAdmin && (
+              <div
+                className="lesson-admin-actions"
+                onClick={(e)=>e.stopPropagation()}
+              >
+                <button onClick={() => handleEdit(lesson)}>✏</button>
+                <button onClick={() => handleDelete(lesson.id)}>🗑</button>
+              </div>
+            )}
+
+            <h3 className="lesson-title">
+              {lesson.title}
+            </h3>
+
+            <button
+              className="lesson-start-btn"
+              onClick={(e)=>{
+                e.stopPropagation();
+                openLesson(lesson.id);
+              }}
+            >
+              ▶ ابدأ
+            </button>
+
+          </div>
+
+        ))}
+
+      </div>
     </div>
   );
 }

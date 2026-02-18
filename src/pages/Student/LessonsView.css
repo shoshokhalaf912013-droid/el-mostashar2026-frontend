@@ -1,20 +1,201 @@
-.lessons-header {
+/* =============================
+   PAGE
+============================= */
+
+.lessons-container {
+  min-height: 100vh;
+  background: #000;
+  padding: 40px;
+  color: white;
+  position: relative;
+}
+
+.lessons-title {
+  text-align: center;
+  color: gold;
+  font-size: 28px;
+  margin-bottom: 30px;
+}
+
+/* =============================
+   BACK BUTTON
+============================= */
+
+.back-btn {
+  position: absolute;
+  right: 30px;
+  top: 30px;
+  background: gold;
+  color: black;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* =============================
+   ADD BUTTON
+============================= */
+
+.add-lesson-wrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: center;
   margin-bottom: 30px;
 }
 
 .add-lesson-btn {
-  padding: 10px 20px;
+  background: linear-gradient(135deg, #ffd700, #b89600);
+  color: black;
+  border: none;
+  padding: 14px 30px;
+  border-radius: 14px;
   font-weight: bold;
-  background: linear-gradient(135deg, #d4af37, #f5d76e);
-  color: #000;
-  border-radius: 10px;
-  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(255,215,0,.5);
+  transition: .3s;
 }
 
 .add-lesson-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+  transform: scale(1.05);
+}
+
+/* =============================
+   GRID
+============================= */
+
+.lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
+  gap: 35px;
+}
+
+/* =============================
+   CARD
+============================= */
+
+.lesson-card {
+  background: #000;
+  border: 2px solid gold;
+  border-radius: 18px;
+  padding: 40px 20px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: .35s;
+  box-shadow: 0 0 20px rgba(255,215,0,.25);
+}
+
+.lesson-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 0 45px rgba(255,215,0,.6);
+}
+
+/* =============================
+   NUMBER CIRCLE (🔥 النبض)
+============================= */
+
+.lesson-index-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: gold;
+  color: black;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  margin-bottom: 15px;
+  animation: pulseGold 2.2s infinite;
+}
+
+@keyframes pulseGold {
+  0% { box-shadow: 0 0 0 0 rgba(255,215,0,.7); }
+  70% { box-shadow: 0 0 0 18px rgba(255,215,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+}
+
+/* =============================
+   TITLE
+============================= */
+
+.lesson-title {
+  font-size: 20px;
+  color: gold;
+  margin-bottom: 18px;
+}
+
+/* =============================
+   START BUTTON (🔥 الذهبى الاحترافى)
+============================= */
+
+.lesson-start-btn {
+  background: transparent;
+  border: 2px solid gold;
+  color: gold;
+  padding: 10px 26px;
+  border-radius: 30px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.lesson-start-btn:hover {
+  background: gold;
+  color: black;
+  box-shadow: 0 0 25px gold;
+}
+
+/* =============================
+   ADMIN ACTIONS
+============================= */
+
+.lesson-admin-actions {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.lesson-admin-actions button {
+  border: 1px solid gold;
+  background: transparent;
+  color: gold;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.lesson-admin-actions button:hover {
+  background: gold;
+  color: black;
+  transform: scale(1.1);
+}
+
+/* =============================
+   EMPTY
+============================= */
+
+.lessons-empty {
+  text-align: center;
+  color: #777;
+  margin-top: 40px;
+}
+.restore-lessons-btn {
+  background: black;
+  color: gold;
+  border: 2px solid gold;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.restore-lessons-btn:hover {
+  background: gold;
+  color: black;
 }

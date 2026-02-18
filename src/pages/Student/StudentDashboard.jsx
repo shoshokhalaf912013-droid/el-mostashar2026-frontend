@@ -1,3 +1,4 @@
+import WelcomeOverlay from "@/components/WelcomeOverlay";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
@@ -9,7 +10,9 @@ import LessonsSidebar from "./LessonsSidebar";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
+  const [studentName, setStudentName] = useState("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -28,9 +31,13 @@ export default function StudentDashboard() {
 
         const data = snap.data();
 
+        // ✅ حفظ اسم الطالب للترحيب
+        setStudentName(data.name || "عزيزي الطالب");
+
         // 🔍 تشخيص فقط – بدون أي تحويل
         console.log("🔥 StudentDashboard user data:", data);
         console.log("🎯 gradeId value:", data.gradeId);
+
       } catch (e) {
         console.error("❌ StudentDashboard error:", e);
       } finally {
@@ -51,6 +58,9 @@ export default function StudentDashboard() {
 
   return (
     <div className="flex min-h-screen bg-black text-white">
+
+      {/* ✅ الترحيب اليومي */}
+      <WelcomeOverlay name={studentName} />
 
       {/* 🔹 Sidebar تجريبي (قراءة فقط) */}
       <LessonsSidebar subjectId="ykghsHWpCvsOl4nMVgeQ" />

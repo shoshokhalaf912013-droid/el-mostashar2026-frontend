@@ -10,7 +10,10 @@
   --card-bg: #0f0f0f;
 }
 
-html, body, #root { height: 100%; }
+html, body, #root {
+  height: 100%;
+}
+
 body {
   font-family: 'Cairo', sans-serif;
   background: var(--dark-bg);
@@ -18,12 +21,44 @@ body {
   direction: rtl;
 }
 
+/* ================= CARDS ================= */
+
 .card {
   @apply bg-[#0b0b0b] border border-[rgba(212,175,55,0.08)] rounded-xl p-4;
 }
+
 .btn-gold {
   @apply bg-[var(--gold)] text-black px-4 py-2 rounded-lg font-bold;
 }
+
 .input {
   @apply bg-[#0f0f0f] text-white p-3 rounded-lg w-full border border-[rgba(255,255,255,0.04)];
+}
+
+/* ================= BADGE SHINE EFFECT ================= */
+
+/* حركة اللمعة */
+@keyframes shine {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+/* كلاس اللمعة */
+.animate-shine {
+  animation: shine 4s linear infinite;
 }

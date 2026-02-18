@@ -1,0 +1,36 @@
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.6s ease;
+}
+
+.welcome-box {
+  background: #111;
+  padding: 40px 60px;
+  border-radius: 20px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 0 40px rgba(255,215,0,0.25);
+  animation: scaleIn 0.6s ease;
+}
+
+.welcome-box h2 {
+  color: gold;
+  margin-bottom: 10px;
+}
+
+@keyframes fadeIn {
+  from {opacity:0;}
+  to {opacity:1;}
+}
+
+@keyframes scaleIn {
+  from {transform: scale(0.9);}
+  to {transform: scale(1);}
+}

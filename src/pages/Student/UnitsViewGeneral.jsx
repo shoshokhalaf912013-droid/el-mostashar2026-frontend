@@ -1,118 +1,136 @@
+import "./UnitsViewGeneral.css";
+import { addNextUnit } from "@/utils/addNextUnit";
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-} from "firebase/firestore";
-
-import { db } from "../../firebase";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/firebase";
 import UnitCard from "./UnitCard";
-import { generateUnits } from "../../utils/generateUnits";
+import useUserRole from "@/hooks/useUserRole";
+
+/* ================= Arabic Names ================= */
+
+const getUnitArabicName = (num) => {
+  const map = {
+    1: "الأولى",
+    2: "الثانية",
+    3: "الثالثة",
+    4: "الرابعة",
+    5: "الخامسة",
+    6: "السادسة",
+    7: "السابعة",
+    8: "الثامنة",
+    9: "التاسعة",
+    10: "العاشرة",
+    11: "الحادية عشرة",
+    12: "الثانية عشرة",
+  };
+
+  return map[num] || num;
+};
 
 export default function UnitsViewGeneral() {
+
+  const params = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { gradeId, subjectId } = useParams();
+
+  /* ✅ جلب الدور */
+  const { role } = useUserRole();
+
+  /* ✅ صلاحيات الإدارة */
+  const canManageUnits =
+    role === "super-admin" || role === "teacher";
 
   const [units, setUnits] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!gradeId || !subjectId) {
-      setUnits([]);
-      setLoading(false);
-      return;
-    }
+  /* ===== PARAMS SAFE ===== */
+
+  const stageIdFromUrl =
+    params.stageId || location.pathname.split("/")[2];
+
+  const gradeId = params.gradeId;
+  const subjectId = params.subjectId;
+
+  const stageMap = {
+    "primary-prep": "primary",
+    "prep": "prep",
+    "secondary": "secondary",
+  };
+
+  const stageId = stageMap[stageIdFromUrl];
+
+  /* ===== LOAD UNITS ===== */
+
+  const loadUnits = async () => {
+
+    if (!stageId || !gradeId || !subjectId) return;
 
     const q = query(
       collection(db, "units"),
-      where("gradeId", "==", gradeId),
-      where("subjectId", "==", subjectId),
       where("systemId", "==", "general"),
-      where("active", "==", true)
+      where("stageId", "==", stageId),
+      where("gradeId", "==", gradeId),
+      where("subjectId", "==", subjectId)
     );
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
+    const snap = await getDocs(q);
 
-      setUnits(data);
-      setLoading(false);
-    });
+    const data = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
 
-    return () => unsub();
-  }, [gradeId, subjectId]);
+    data.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  // =============================
-  // إضافة وحدة واحدة فقط
-  // =============================
-  const handleGenerateUnits = async () => {
-    try {
-      await generateUnits({
-        gradeId,
-        stageId: units[0]?.stageId || "primary",
-        subjectId,
-        systemId: "general",
-      });
-    } catch (err) {
-      console.error("❌ Add unit failed:", err);
-    }
+    setUnits(data);
   };
 
-  if (loading) {
-    return (
-      <div style={{ color: "#fff", padding: "40px" }}>
-        جاري التحميل...
-      </div>
-    );
-  }
+  useEffect(() => {
+    loadUnits();
+  }, [stageId, gradeId, subjectId]);
+
+  /* ================= UI ================= */
 
   return (
-    <div style={{ padding: "24px" }}>
-      <h2 style={{ color: "#fff", marginBottom: "20px" }}>
-        الوحدات
-      </h2>
+    <div className="units-container">
 
-      {/* زر الإضافة */}
-      <div style={{ marginBottom: "30px" }}>
+      {/* ✅ زر الإضافة يظهر فقط للإدارة */}
+      {canManageUnits && (
         <button
-          onClick={handleGenerateUnits}
-          style={{
-            padding: "10px 18px",
-            background: "#0f9d58",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "14px",
+          className="add-unit-btn"
+          onClick={async () => {
+            await addNextUnit(stageId, gradeId, subjectId);
+            await loadUnits();
           }}
         >
-          + إضافة وحدة
+          ➕ إضافة وحدة جديدة
         </button>
-      </div>
-
-      {units.length === 0 && (
-        <div style={{ color: "#aaa" }}>
-          لا توجد وحدات حالياً
-        </div>
       )}
 
-      {units.map((unit) => (
-        <UnitCard
-          key={unit.id}
-          unit={unit}
-          onClick={() =>
-            navigate(
-              `/student/primary-prep/lessons/${gradeId}/${subjectId}/${unit.unitId}`
-            )
-          }
-        />
-      ))}
+      {units.map((u, index) => {
+
+        const order = u.order || index + 1;
+
+        const displayTitle =
+          u.title || `الوحدة ${getUnitArabicName(order)}`;
+
+        return (
+          <UnitCard
+            key={u.id}
+            unit={{ ...u, title: displayTitle }}
+
+            /* ✅ الإصلاح الحقيقي هنا */
+            canManage={canManageUnits}
+
+            onClick={() =>
+              navigate(
+                `/student/${stageIdFromUrl}/lessons/${gradeId}/${subjectId}/${u.unitId}`
+              )
+            }
+          />
+        );
+      })}
+
     </div>
   );
 }

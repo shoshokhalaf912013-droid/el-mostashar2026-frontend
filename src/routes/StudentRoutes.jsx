@@ -16,7 +16,9 @@ import PrimaryPrepSubjectsView from "../pages/Student/PrimaryPrep/PrimaryPrepSub
 import UnitsView from "../pages/Student/UnitsView";
 import UnitsViewGeneral from "../pages/Student/UnitsViewGeneral";
 import LessonsView from "../pages/Student/LessonsView";
-import LessonFlow from "../pages/Student/LessonFlow";
+
+/* ✅ PLAYER الموحد (بدل LessonFlow) */
+import LessonPlayer from "../pages/Student/LessonPlayer";
 
 /* ===== Secondary ===== */
 import SelectSecondarySystem from "../pages/Student/SelectSecondarySystem";
@@ -87,11 +89,12 @@ export default function StudentRoutes() {
             }
           />
 
+          {/* ✅ تم التوحيد هنا */}
           <Route
             path="primary-prep/lesson/:gradeId/:subjectId/:unitId/:lessonId"
             element={
               <RequireGrade>
-                <LessonFlow />
+                <LessonPlayer />
               </RequireGrade>
             }
           />
@@ -120,9 +123,10 @@ export default function StudentRoutes() {
             element={<LessonsView />}
           />
 
+          {/* ✅ تم التوحيد هنا أيضاً */}
           <Route
             path="secondary/lesson/:gradeId/:subjectId/:unitId/:lessonId"
-            element={<LessonFlow />}
+            element={<LessonPlayer />}
           />
 
           {/* ================= BAC ================= */}
@@ -153,7 +157,7 @@ export default function StudentRoutes() {
             }
           />
 
-          {/* 🔥 الإضافة الحاسمة – بدون كسر أي شيء */}
+          {/* 🔥 بدون كسر أي شيء */}
           <Route
             path="bac/lessons/:gradeId/:subjectId/:unitId"
             element={

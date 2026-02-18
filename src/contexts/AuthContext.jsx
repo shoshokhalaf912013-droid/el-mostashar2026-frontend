@@ -1,100 +1,82 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { doc, onSnapshot } from "firebase/firestore";
-import { PLATFORM_OWNER_EMAIL } from "../config/owner";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
-const AuthContext = createContext(null);
-
-// ===== تطبيع الدور (عرض فقط) =====
-const normalizeRole = (role) => {
-  if (!role) return null;
-
-  const r = String(role).toLowerCase().trim();
-
-  if (["superadmin", "super-admin", "super_admin"].includes(r))
-    return "super-admin";
-  if (r === "admin") return "admin";
-  if (r === "teacher") return "teacher";
-  if (r === "student") return "student";
-
-  return null;
-};
+const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+
+  // ✅ مهم جدا
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
 
-      if (!currentUser) {
+    const auth = getAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+
+      console.log("🔥 AUTH CHANGED:", firebaseUser?.email);
+
+      // =========================
+      // 🚪 المستخدم خرج
+      // =========================
+      if (!firebaseUser) {
+        setUser(null);
         setRole(null);
         setLoading(false);
         return;
       }
 
-      const isOwner =
-        currentUser.email &&
-        currentUser.email.toLowerCase().trim() ===
-          PLATFORM_OWNER_EMAIL.toLowerCase().trim();
+      try {
 
-      // 👑 السوبر أدمن لا يدخل Firestore رول ولا طالب
-      if (isOwner) {
-        setRole("super-admin");
-        setLoading(false);
-        return;
-      }
+        // ✅ انتظر تثبيت auth session بالكامل
+        await firebaseUser.getIdToken(true);
 
-      // ===== باقي المستخدمين =====
-      const ref = doc(db, "users", currentUser.uid);
+        // حفظ المستخدم
+        setUser(firebaseUser);
 
-      const unsubUser = onSnapshot(ref, (snap) => {
-        if (!snap.exists()) {
-          setRole(null);
-          setLoading(false);
-          return;
+        // =========================
+        // 🔎 تحميل الدور من Firestore
+        // =========================
+        const ref = doc(db, "users", firebaseUser.uid);
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+          const data = snap.data();
+
+          console.log("✅ FIRESTORE ROLE:", data.role);
+
+          setRole(data.role || "student");
+        } else {
+          setRole("student");
         }
 
-        const data = snap.data();
-        setRole(normalizeRole(data.role));
-        setLoading(false);
-      });
+      } catch (err) {
 
-      return () => unsubUser();
+        console.error("❌ ROLE LOAD ERROR:", err);
+        setRole("student");
+
+      } finally {
+        // ✅ لا نسمح للتطبيق بالعمل قبل هذه اللحظة
+        setLoading(false);
+      }
+
     });
 
-    return () => unsubAuth();
+    return () => unsubscribe();
+
   }, []);
 
-  const isSuperAdmin =
-    user?.email &&
-    user.email.toLowerCase().trim() ===
-      PLATFORM_OWNER_EMAIL.toLowerCase().trim();
-
-  const value = {
-    user,
-    role, // عرض فقط
-    loading,
-
-    // ===== تحكم حقيقي =====
-    isSuperAdmin,
-    isAdmin: role === "admin",
-    isTeacher: role === "teacher",
-    isStudent: role === "student",
-  };
-
   return (
-    <AuthContext.Provider value={value}>
-      {children}
+    <AuthContext.Provider value={{ user, role, loading }}>
+      {/* ✅ لا نعرض التطبيق قبل انتهاء auth */}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-  return ctx;
-}
+export const useAuth = () => useContext(AuthContext);
