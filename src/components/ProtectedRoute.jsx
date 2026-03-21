@@ -1,28 +1,39 @@
-// src/components/ProtectedRoute.jsx
-
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function ProtectedRoute({ children, roles = [] }) {
-  const { user, role } = useAuth();
+const normalizeRole = (role) => {
+  if (!role) return "";
+  return role.toLowerCase().replace(/[-_]/g, "");
+};
 
-  // مرحلة التحميل
-  if (user === undefined || role === undefined) {
+export default function ProtectedRoute({ children, roles = [] }) {
+
+  const { user, role, loading } = useAuth();
+
+  /* انتظار Firebase */
+  if (loading) {
     return (
-      <div className="text-center text-yellow-400 p-6 text-xl">
-        ⏳ جاري التحقق من صلاحيات الوصول...
+      <div className="h-screen flex items-center justify-center text-yellow-400 text-xl">
+        ⏳ جاري التحقق من تسجيل الدخول...
       </div>
     );
   }
 
-  // لم يسجل دخول
-  if (!user) return <Navigate to="/login" replace />;
-
-  // تحقق الصلاحيات
-  if (roles.length > 0 && !roles.includes(role?.toLowerCase())) {
-    return <Navigate to="/" replace />;
+  /* غير مسجل */
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
-  // مسموح له بالدخول
+  /* تحقق الصلاحيات */
+  if (roles.length) {
+
+    const normalizedUserRole = normalizeRole(role);
+    const normalizedAllowedRoles = roles.map(normalizeRole);
+
+    if (!normalizedAllowedRoles.includes(normalizedUserRole)) {
+      return <Navigate to="/" replace />;
+    }
+  }
+
   return children;
 }

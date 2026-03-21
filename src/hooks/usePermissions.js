@@ -1,10 +1,14 @@
-// hooks/usePermissions.js
-export function usePermissions(userRole) {
-  const role = roles[userRole]; // من فايربيز
+import { useAuth } from "@/contexts/AuthContext";
+import { hasPermission } from "@/core/authorization";
+
+export function usePermissions() {
+
+  const { role } = useAuth();
 
   return {
-    canEditFlow: role?.canEditLessonFlow,
-    canToggleLesson: role?.canToggleLessonActive,
-    canDeleteLesson: role?.canDeleteLesson,
+    role,
+    canManageLessons: hasPermission(role, "manageLessons"),
+    canStartLive: hasPermission(role, "startLive"),
+    canUploadFiles: hasPermission(role, "uploadFiles"),
   };
 }

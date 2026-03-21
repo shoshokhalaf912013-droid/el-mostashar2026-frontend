@@ -1,274 +1,376 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL
-} from "firebase/storage";
-import {
-  doc,
-  updateDoc,
-  getDoc
-} from "firebase/firestore";
+import "./LessonPlayer.css"
+import {useEffect,useState} from "react"
+import {useParams,useNavigate} from "react-router-dom"
 
-import {
-  getAuth,
-  onAuthStateChanged
-} from "firebase/auth";
+import {doc,onSnapshot,updateDoc} from "firebase/firestore"
+import {ref,uploadBytesResumable,getDownloadURL} from "firebase/storage"
 
-import { db, storage } from "../../firebase";
-import "./lesson.css";
+import {db,storage} from "../../firebase"
+import {useAuth} from "../../contexts/AuthContext"
 
-export default function LessonPlayer() {
+export default function LessonPlayer(){
 
-  const { lessonId } = useParams();
-  const navigate = useNavigate();
+const {gradeId,subjectId,unitId,lessonId}=useParams()
+const navigate=useNavigate()
+const {role}=useAuth()
 
-  const [videoUrl, setVideoUrl] = useState(null);
-  const [pdfUrl, setPdfUrl] = useState(null);
+const [lesson,setLesson]=useState(null)
 
-  const [videoProgress, setVideoProgress] = useState(0);
-  const [pdfProgress, setPdfProgress] = useState(0);
+const [videoUrl,setVideoUrl]=useState("")
+const [pdfUrl,setPdfUrl]=useState("")
 
-  const [role, setRole] = useState(null);
+const [youtubeInput,setYoutubeInput]=useState("")
 
-  /* =========================
-     CHECK USER ROLE
-  ========================= */
-  useEffect(() => {
+const [videoProgress,setVideoProgress]=useState(0)
+const [pdfProgress,setPdfProgress]=useState(0)
 
-    const auth = getAuth();
+const lessonRef=doc(
+db,
+"grades",gradeId,
+"subjects",subjectId,
+"units",unitId,
+"lessons",lessonId
+)
 
-    const unsub = onAuthStateChanged(auth, async (user) => {
+useEffect(()=>{
 
-      if (!user) {
-        setRole("student");
-        return;
-      }
+const unsub=onSnapshot(lessonRef,(snap)=>{
 
-      const userRef = doc(db, "users", user.uid);
-      const snap = await getDoc(userRef);
+if(!snap.exists()){
+navigate("/")
+return
+}
 
-      if (snap.exists()) {
-        setRole(snap.data().role || "student");
-      } else {
-        setRole("student");
-      }
+const data=snap.data()
 
-    });
+setLesson(data)
+setVideoUrl(data.videoUrl || "")
+setPdfUrl(data.pdfUrl || "")
 
-    return () => unsub();
+})
 
-  }, []);
+return()=>unsub()
 
-  const isAdmin =
-    role === "admin" || role === "super-admin";
+},[])
 
-  /* =========================
-     LOAD LESSON
-  ========================= */
-  useEffect(() => {
+const uploadVideo=(file)=>{
 
-    const loadLesson = async () => {
-      const lessonRef = doc(db, "lessons", lessonId);
-      const snap = await getDoc(lessonRef);
+if(!file)return
 
-      if (snap.exists()) {
-        const data = snap.data();
-        setVideoUrl(data.videoUrl || null);
-        setPdfUrl(data.pdfUrl || null);
-      }
-    };
+const storageRef=ref(storage,`lessons/${lessonId}/video_${Date.now()}`)
 
-    loadLesson();
+const task=uploadBytesResumable(storageRef,file)
 
-  }, [lessonId]);
+task.on(
 
-  /* =========================
-     VIDEO UPLOAD (ADMIN ONLY)
-  ========================= */
-  const handleVideoUpload = (file) => {
+"state_changed",
 
-    if (!isAdmin || !file) return;
+(snapshot)=>{
 
-    const storageRef = ref(
-      storage,
-      `lessons/${lessonId}/video_${Date.now()}`
-    );
+const progress=(snapshot.bytesTransferred/snapshot.totalBytes)*100
+setVideoProgress(Math.floor(progress))
 
-    const uploadTask = uploadBytesResumable(storageRef, file);
+},
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+console.error,
 
-        setVideoProgress(Math.round(progress));
-      },
-      console.error,
-      async () => {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
+async()=>{
 
-        await updateDoc(doc(db, "lessons", lessonId), {
-          videoUrl: url
-        });
+const url=await getDownloadURL(task.snapshot.ref)
 
-        setVideoUrl(url);
-      }
-    );
-  };
+await updateDoc(lessonRef,{
+videoUrl:url
+})
 
-  /* =========================
-     PDF UPLOAD (ADMIN ONLY)
-  ========================= */
-  const handlePdfUpload = (file) => {
+setVideoUrl(url)
 
-    if (!isAdmin || !file) return;
+}
 
-    const storageRef = ref(
-      storage,
-      `lessons/${lessonId}/pdf_${Date.now()}`
-    );
+)
 
-    const uploadTask = uploadBytesResumable(storageRef, file);
+}
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+const uploadPdf=(file)=>{
 
-        setPdfProgress(Math.round(progress));
-      },
-      console.error,
-      async () => {
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
+if(!file)return
 
-        await updateDoc(doc(db, "lessons", lessonId), {
-          pdfUrl: url
-        });
+const storageRef=ref(storage,`lessons/${lessonId}/pdf_${Date.now()}`)
 
-        setPdfUrl(url);
-      }
-    );
-  };
+const task=uploadBytesResumable(storageRef,file)
 
-  /* =========================
-     UI
-  ========================= */
-  return (
-    <div className="lesson-page">
+task.on(
 
-      <button className="back-btn" onClick={() => navigate(-1)}>
-        ← رجوع
-      </button>
+"state_changed",
 
-      <h2 className="lesson-title">الدرس الحالي</h2>
+(snapshot)=>{
 
-      {/* ================= VIDEO ================= */}
-      <div className="lesson-card">
+const progress=(snapshot.bytesTransferred/snapshot.totalBytes)*100
+setPdfProgress(Math.floor(progress))
 
-        <h3>🎬 فيديو الدرس</h3>
+},
 
-        {videoUrl ? (
-          <video controls width="100%" src={videoUrl} />
-        ) : (
-          <p>لا يوجد فيديو بعد</p>
-        )}
+console.error,
 
-        {/* ===== ADMIN ===== */}
-        {isAdmin ? (
-          <>
-            <label className="upload-btn">
-              اختيار فيديو
-              <input
-                type="file"
-                accept="video/*"
-                hidden
-                onChange={(e) =>
-                  handleVideoUpload(e.target.files[0])
-                }
-              />
-            </label>
+async()=>{
 
-            <div className="gold-progress">
-              <div
-                className="gold-progress-bar"
-                style={{ width: `${videoProgress}%` }}
-              />
-            </div>
+const url=await getDownloadURL(task.snapshot.ref)
 
-            <p>{videoProgress}%</p>
-          </>
-        ) : (
-          videoUrl && (
-            <button
-              className="upload-btn"
-              onClick={() => window.open(videoUrl)}
-            >
-              ▶ ابدأ الفيديو
-            </button>
-          )
-        )}
+await updateDoc(lessonRef,{
+pdfUrl:url
+})
 
-      </div>
+setPdfUrl(url)
 
-      {/* ================= PDF ================= */}
-      <div className="lesson-card">
+}
 
-        <h3>📄 ملف PDF</h3>
+)
 
-        {pdfUrl ? (
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="open-pdf"
-          >
-            فتح الملف
-          </a>
-        ) : (
-          <p>لا يوجد PDF بعد</p>
-        )}
+}
 
-        {/* ===== ADMIN ===== */}
-        {isAdmin ? (
-          <>
-            <label className="upload-btn">
-              اختيار PDF
-              <input
-                type="file"
-                accept="application/pdf"
-                hidden
-                onChange={(e) =>
-                  handlePdfUpload(e.target.files[0])
-                }
-              />
-            </label>
+const extractYoutubeId=(url)=>{
 
-            <div className="gold-progress">
-              <div
-                className="gold-progress-bar"
-                style={{ width: `${pdfProgress}%` }}
-              />
-            </div>
+const reg=/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/
 
-            <p>{pdfProgress}%</p>
-          </>
-        ) : (
-          pdfUrl && (
-            <button
-              className="upload-btn"
-              onClick={() => window.open(pdfUrl)}
-            >
-              📄 تصفح PDF
-            </button>
-          )
-        )}
+const match=url.match(reg)
 
-      </div>
+return match?match[1]:null
 
-    </div>
-  );
+}
+
+const saveYoutube=async()=>{
+
+const id=extractYoutubeId(youtubeInput)
+
+if(!id){
+alert("رابط غير صحيح")
+return
+}
+
+const embed=`https://www.youtube.com/embed/${id}`
+
+await updateDoc(lessonRef,{
+videoUrl:embed
+})
+
+setVideoUrl(embed)
+
+}
+
+const joinWhiteboard=()=>{
+navigate(`/student/live/${gradeId}/${subjectId}/${unitId}/${lessonId}`)
+}
+
+const openExam=()=>{
+navigate(`/student/exam/${gradeId}/${subjectId}/${unitId}/${lessonId}`)
+}
+
+const addExam=()=>{
+navigate(`/teacher/exam-builder/${gradeId}/${subjectId}/${unitId}/${lessonId}`)
+}
+
+const editExam=()=>{
+navigate(`/teacher/exam-edit/${gradeId}/${subjectId}/${unitId}/${lessonId}`)
+}
+
+const previewExam=()=>{
+navigate(`/teacher/exam-preview/${gradeId}/${subjectId}/${unitId}/${lessonId}`)
+}
+
+const deleteExam=()=>{
+navigate(`/super-admin/exam-delete/${gradeId}/${subjectId}/${unitId}/${lessonId}`)
+}
+
+return(
+
+<div className="lesson-player">
+
+<button className="back-btn" onClick={()=>navigate(-1)}>
+رجوع
+</button>
+
+<h2 className="lesson-title">
+{lesson?.title || "الدرس"}
+</h2>
+
+<div className="lesson-block">
+
+<h3>Whiteboard Live</h3>
+
+<div className="button-row">
+
+<button className="gold-btn" onClick={joinWhiteboard}>
+دخول السبورة
+</button>
+
+<button className="red-btn">
+إنهاء البث
+</button>
+
+</div>
+
+</div>
+
+<div className="lesson-block">
+
+<h3>فيديو الدرس</h3>
+
+{videoUrl &&(
+
+videoUrl.includes("youtube")
+
+?
+
+<iframe
+className="video-player"
+src={videoUrl}
+allowFullScreen
+/>
+
+:
+
+<video
+className="video-player"
+controls
+src={videoUrl}
+/>
+
+)}
+
+<input
+className="youtube-input"
+placeholder="رابط يوتيوب"
+value={youtubeInput}
+onChange={(e)=>setYoutubeInput(e.target.value)}
+/>
+
+<div className="button-row">
+
+<label className="gold-btn">
+
+رفع فيديو
+
+<input
+hidden
+type="file"
+accept="video/*"
+onChange={(e)=>uploadVideo(e.target.files[0])}
+/>
+
+</label>
+
+<button className="gold-btn" onClick={saveYoutube}>
+حفظ رابط
+</button>
+
+</div>
+
+{videoProgress>0 &&(
+
+<div className="progress-box">
+
+<div
+className="progress-bar"
+style={{width:videoProgress+"%"}}
+>
+
+<span>{videoProgress}%</span>
+
+</div>
+
+</div>
+
+)}
+
+</div>
+
+{/* PDF SECTION */}
+
+<div className="lesson-block">
+
+<h3>PDF</h3>
+
+<div className="button-row">
+
+<label className="gold-btn">
+
+رفع الملف
+
+<input
+hidden
+type="file"
+accept="application/pdf"
+onChange={(e)=>uploadPdf(e.target.files[0])}
+/>
+
+</label>
+
+</div>
+
+{pdfProgress>0 &&(
+
+<div className="progress-box">
+
+<div
+className="progress-bar"
+style={{width:pdfProgress+"%"}}
+>
+
+<span>{pdfProgress}%</span>
+
+</div>
+
+</div>
+
+)}
+
+{pdfUrl &&(
+
+<div className="pdf-viewer">
+
+<iframe
+src={pdfUrl}
+className="pdf-frame"
+title="PDF Viewer"
+/>
+
+</div>
+
+)}
+
+</div>
+
+<div className="lesson-block">
+
+<h3>الامتحان</h3>
+
+<div className="button-row">
+
+<button className="gold-btn" onClick={addExam}>
+إضافة الامتحان
+</button>
+
+<button className="gold-btn" onClick={openExam}>
+فتح الامتحان
+</button>
+
+<button className="gold-btn" onClick={editExam}>
+تعديل
+</button>
+
+<button className="gold-btn" onClick={previewExam}>
+معاينة
+</button>
+
+<button className="red-btn" onClick={deleteExam}>
+حذف
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+)
+
 }

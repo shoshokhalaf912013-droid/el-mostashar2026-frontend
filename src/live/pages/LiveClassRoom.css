@@ -1,0 +1,90 @@
+.classroom{
+height:100vh;
+display:flex;
+flex-direction:column;
+background:#000814;
+color:#fff;
+}
+
+.top-bar{
+background:#000;
+padding:10px;
+border-bottom:2px solid gold;
+}
+
+.main-area{
+flex:1;
+display:flex;
+}
+
+.video-area{
+width:30%;
+background:#111;
+border-right:2px solid gold;
+}
+
+.board-area{
+width:70%;
+position:relative;
+background:#eee;
+}
+
+/* اللوح */
+
+.whiteboard{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:10;
+}
+
+.whiteboard canvas{
+width:100%;
+height:100%;
+cursor:crosshair;
+}
+
+.board-tools{
+position:absolute;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+gap:10px;
+}
+
+.board-tools button{
+background:gold;
+border:none;
+padding:8px 16px;
+border-radius:20px;
+cursor:pointer;
+font-weight:bold;
+}
+
+/* الأزرار */
+
+.controls{
+background:#000814;
+padding:10px;
+display:flex;
+justify-content:center;
+gap:10px;
+border-top:2px solid gold;
+}
+
+.gold-btn{
+background:gold;
+border:none;
+padding:8px 14px;
+border-radius:20px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.gold-btn.leave{
+background:#ff4444;
+color:white;
+}

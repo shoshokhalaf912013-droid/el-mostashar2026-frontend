@@ -8,17 +8,13 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
   serverTimestamp,
   getDocs,
-  getDoc,
 } from "firebase/firestore";
 
 import { db } from "@/firebase";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getLessonTitle } from "@/utils/getLessonTitle";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function LessonsView() {
 
@@ -28,46 +24,10 @@ export default function LessonsView() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ⭐ صلاحيات
-  const [role, setRole] = useState(null);
+  /* 🔥 PERMISSIONS FROM CENTRAL SYSTEM */
+  const { canManageLessons } = usePermissions();
 
-  /* ================= LOAD ROLE ================= */
-
-  useEffect(() => {
-
-    const auth = getAuth();
-
-    const unsub = onAuthStateChanged(auth, async (user) => {
-
-      if (!user) {
-        setRole("student");
-        return;
-      }
-
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-
-        if (snap.exists()) {
-          setRole(snap.data().role || "student");
-        } else {
-          setRole("student");
-        }
-
-      } catch (e) {
-        console.error(e);
-        setRole("student");
-      }
-    });
-
-    return () => unsub();
-
-  }, []);
-
-  const isAdmin =
-    role === "admin" || role === "super-admin";
-
-  /* ================= REALTIME LESSONS ================= */
+  /* ================= LOAD LESSONS ================= */
 
   useEffect(() => {
 
@@ -86,14 +46,37 @@ export default function LessonsView() {
 
     const q = query(lessonsRef, orderBy("order"));
 
-    const unsub = onSnapshot(q, (snapshot) => {
+    const unsub = onSnapshot(q, async (snapshot) => {
 
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
+      const lessonsData = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
       }));
 
-      setLessons(data);
+      /* ===== LIVE LINK ===== */
+
+      const liveSnap = await getDocs(collection(db, "liveClasses"));
+
+      const liveMap = {};
+      liveSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.lessonId) {
+          liveMap[data.lessonId] = {
+            hasLive: true,
+            liveClassId: doc.id,
+          };
+        }
+      });
+
+      const merged = lessonsData.map(l => ({
+        ...l,
+        ...(liveMap[l.id] || {
+          hasLive: false,
+          liveClassId: null,
+        }),
+      }));
+
+      setLessons(merged);
       setLoading(false);
     });
 
@@ -101,11 +84,11 @@ export default function LessonsView() {
 
   }, [gradeId, subjectId, unitId]);
 
-  /* ================= ADD ================= */
+  /* ================= ADD LESSON ================= */
 
   const handleAddLesson = async () => {
 
-    if (!isAdmin) return;
+    if (!canManageLessons) return;
 
     const lessonsRef = collection(
       db,
@@ -126,103 +109,35 @@ export default function LessonsView() {
     await addDoc(lessonsRef, {
       title: getLessonTitle(subjectId, nextOrder),
       order: nextOrder,
-      videoUrl: "",
-      pdfUrl: "",
       createdAt: serverTimestamp(),
     });
   };
 
-  /* ================= DELETE ================= */
-
-  const handleDelete = async (lessonId) => {
-
-    if (!isAdmin) return;
-
-    await deleteDoc(
-      doc(
-        db,
-        "grades",
-        gradeId,
-        "subjects",
-        subjectId,
-        "units",
-        unitId,
-        "lessons",
-        lessonId
-      )
-    );
-  };
-
-  /* ================= EDIT ================= */
-
-  const handleEdit = async (lesson) => {
-
-    if (!isAdmin) return;
-
-    const newTitle = prompt("اسم الدرس", lesson.title);
-    if (!newTitle) return;
-
-    await updateDoc(
-      doc(
-        db,
-        "grades",
-        gradeId,
-        "subjects",
-        subjectId,
-        "units",
-        unitId,
-        "lessons",
-        lesson.id
-      ),
-      { title: newTitle }
-    );
-  };
-
-  /* ================= FIX ALL ================= */
-
-  const fixAllLessonsTitles = async () => {
-
-    if (!isAdmin) return;
-
-    const lessonsRef = collection(
-      db,
-      "grades",
-      gradeId,
-      "subjects",
-      subjectId,
-      "units",
-      unitId,
-      "lessons"
-    );
-
-    const snap = await getDocs(lessonsRef);
-
-    for (const d of snap.docs) {
-
-      const data = d.data();
-
-      const newTitle = getLessonTitle(
-        subjectId,
-        data.order || 1
-      );
-
-      await updateDoc(d.ref, { title: newTitle });
-    }
-
-    alert("✅ تم التصحيح");
-  };
-
-  /* ================= OPEN ================= */
+  /* ================= NAVIGATION ================= */
 
   const openLesson = (lessonId) => {
+
+    let stage = "secondary";
+
+    if (gradeId.startsWith("pri") || gradeId.startsWith("prep")) {
+      stage = "primary-prep";
+    }
+
+    if (gradeId.startsWith("bac")) {
+      stage = "bac";
+    }
+
     navigate(
-      `/student/primary-prep/lesson/${gradeId}/${subjectId}/${unitId}/${lessonId}`
+      `/student/${stage}/lesson/${gradeId}/${subjectId}/${unitId}/${lessonId}`
     );
   };
 
-  if (loading) {
+  const openLive = (liveClassId) => {
+    navigate(`/student/live/${liveClassId}`);
+  };
+
+  if (loading)
     return <div className="lessons-container">Loading...</div>;
-  }
 
   /* ================= UI ================= */
 
@@ -235,71 +150,55 @@ export default function LessonsView() {
 
       <h1 className="lessons-title">الدروس</h1>
 
-      {/* ⭐ أزرار الإدارة فقط */}
-      {isAdmin && (
-        <div className="add-lesson-wrapper">
-
-          <button
-            className="add-lesson-btn"
-            onClick={handleAddLesson}
-          >
-            + إضافة درس
-          </button>
-
-          <button
-            className="add-lesson-btn"
-            style={{
-              marginInlineStart: "10px",
-              background:"#111",
-              color:"#FFD700",
-              border:"1px solid #FFD700"
-            }}
-            onClick={fixAllLessonsTitles}
-          >
-            🔄 تصحيح كل الدروس
-          </button>
-
-        </div>
+      {canManageLessons && (
+        <button className="add-btn" onClick={handleAddLesson}>
+          + إضافة درس
+        </button>
       )}
 
       <div className="lessons-grid">
 
         {lessons.map((lesson, index) => (
 
-          <div
-            key={lesson.id}
-            className="lesson-card"
-            onClick={() => openLesson(lesson.id)}
-          >
+          <div key={lesson.id} className="lesson-card">
 
-            <div className="lesson-index-circle">
-              {index + 1}
+            <div
+              onClick={() => openLesson(lesson.id)}
+              style={{ cursor: "pointer" }}
+            >
+              <div className="lesson-index-circle">
+                {index + 1}
+              </div>
+
+              <h3 className="lesson-title">
+                {lesson.title}
+              </h3>
             </div>
 
-            {/* ⭐ أدوات الإدارة */}
-            {isAdmin && (
-              <div
-                className="lesson-admin-actions"
-                onClick={(e)=>e.stopPropagation()}
+            <div className="lesson-actions">
+
+              <button
+                className="lesson-start-btn"
+                onClick={() => openLesson(lesson.id)}
               >
-                <button onClick={() => handleEdit(lesson)}>✏</button>
-                <button onClick={() => handleDelete(lesson.id)}>🗑</button>
-              </div>
-            )}
+                ▶ ابدأ
+              </button>
 
-            <h3 className="lesson-title">
-              {lesson.title}
-            </h3>
+              {lesson.hasLive && (
+                <button
+                  className="lesson-start-btn"
+                  style={{
+                    marginTop: "10px",
+                    borderColor: "#00ffd0",
+                    color: "#00ffd0",
+                  }}
+                  onClick={() => openLive(lesson.liveClassId)}
+                >
+                  🔴 دخول الحصة المباشرة
+                </button>
+              )}
 
-            <button
-              className="lesson-start-btn"
-              onClick={(e)=>{
-                e.stopPropagation();
-                openLesson(lesson.id);
-              }}
-            >
-              ▶ ابدأ
-            </button>
+            </div>
 
           </div>
 

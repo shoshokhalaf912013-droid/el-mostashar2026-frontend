@@ -26,13 +26,13 @@ export const uploadFile = (file, path, onProgress) => {
         if (onProgress) onProgress(progress);
       },
 
-      reject,
+      (error) => reject(error),
 
       async () => {
         const url =
           await getDownloadURL(uploadTask.snapshot.ref);
 
-        resolve(url);
+        resolve(url); // ✅ يرجع رابط الـ PDF
       }
     );
   });

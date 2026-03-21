@@ -5,27 +5,27 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
+
 import { auth, db } from "../../firebase";
 
 export default function AddLesson() {
-  console.log("✅ ADD LESSON (SHARED) FILE LOADED");
 
   const navigate = useNavigate();
-  const { systemId, gradeId, subjectId, unitId } = useParams();
+
+  const { gradeId, subjectId, unitId } = useParams();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
-    e.stopPropagation();
 
     if (loading) return;
 
     const user = auth.currentUser;
+
     if (!user) {
       setError("غير مسجل دخول");
       return;
@@ -40,12 +40,26 @@ export default function AddLesson() {
     setError("");
 
     try {
-      await addDoc(collection(db, "lessons"), {
+
+      // ✅ المسار الصحيح داخل الشجرة التعليمية
+      const lessonsRef = collection(
+        db,
+        "grades",
+        gradeId,
+        "subjects",
+        subjectId,
+        "units",
+        unitId,
+        "lessons"
+      );
+
+      await addDoc(lessonsRef, {
         title: title.trim(),
         description: description.trim(),
-        videoUrl: videoUrl.trim() || null,
 
-        systemId: systemId || null,
+        videoUrl: "", // 🔥 سيُملأ بعد الرفع
+        pdfUrl: "",
+
         gradeId,
         subjectId,
         unitId,
@@ -56,6 +70,7 @@ export default function AddLesson() {
       });
 
       navigate(-1);
+
     } catch (err) {
       console.error("❌ SAVE LESSON ERROR:", err);
       setError("فشل حفظ الدرس");
@@ -88,6 +103,7 @@ export default function AddLesson() {
           border: "2px solid rgba(212,175,55,.6)",
         }}
       >
+
         {error && (
           <div
             style={{
@@ -118,13 +134,6 @@ export default function AddLesson() {
           style={inputStyle}
         />
 
-        <label>رابط الفيديو</label>
-        <input
-          value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
-          style={inputStyle}
-        />
-
         <button
           type="submit"
           disabled={loading}
@@ -132,6 +141,7 @@ export default function AddLesson() {
         >
           {loading ? "جاري الحفظ..." : "حفظ الدرس"}
         </button>
+
       </form>
     </div>
   );

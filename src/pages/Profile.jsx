@@ -3,38 +3,32 @@ import { useAuth } from "../contexts/AuthContext";
 import { getAuth, signOut } from "firebase/auth";
 
 export default function Profile() {
-  const { user, role } = useAuth();
+
+  const { user, userData, role, loading } = useAuth();
+
+  if (loading)
+    return <div className="text-center mt-10">جاري التحميل...</div>;
 
   if (!user) return null;
 
-  /* =========================
-     LOGOUT REAL (Firebase)
-  ========================== */
   const logoutNow = async () => {
-    try {
-      await signOut(getAuth());
-
-      console.log("✅ USER LOGGED OUT COMPLETELY");
-
-      // إعادة تحميل التطبيق لمسح أى Session
-      window.location.reload();
-    } catch (err) {
-      console.error("❌ Logout Error:", err);
-   _toggle
-    }
+    await signOut(getAuth());
+    window.location.reload();
   };
 
-  const roleName = {
-    "super-admin": "مدير النظام (سوبر أدمن)",
+  const roleNameMap = {
+    superadmin: "مدير النظام (سوبر أدمن)",
     admin: "مشرف",
     teacher: "معلم",
     student: "طالب",
-  }[role] || "مستخدم";
+  };
+
+  const roleName = roleNameMap[role] || "مستخدم";
 
   return (
     <div className="max-w-2xl mx-auto">
 
-      {/* ===== CARD ===== */}
+      {/* ===== PROFILE CARD ===== */}
       <div className="card mb-4 flex items-center gap-6">
 
         <img
@@ -45,7 +39,7 @@ export default function Profile() {
 
         <div>
           <h3 className="text-xl font-bold">
-            {user.displayName || "المستخدم"}
+            {userData?.name || user.displayName || "المستخدم"}
           </h3>
 
           <p className="text-sm text-[rgba(255,255,255,0.7)]">
@@ -58,7 +52,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ===== STUDENT DATA ===== */}
+      {/* ===== STUDENT SECTION ===== */}
       {role === "student" && (
         <div className="card">
           <h4 className="font-semibold mb-2">تقدم الطالب</h4>
@@ -70,7 +64,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ===== REAL LOGOUT BUTTON ===== */}
       <div className="mt-6 text-center">
         <button
           onClick={logoutNow}

@@ -1,5 +1,9 @@
-import { ref, uploadBytesResumable, getDownloadURL } 
-from "firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL
+} from "firebase/storage";
+
 import { storage } from "../firebase";
 
 export const uploadVideo = (file, path, onProgress) => {
@@ -19,16 +23,17 @@ export const uploadVideo = (file, path, onProgress) => {
           (snapshot.bytesTransferred /
             snapshot.totalBytes) * 100;
 
-        onProgress(progress);
+        if (onProgress) onProgress(progress);
       },
 
-      reject,
+      (error) => reject(error),
 
       async () => {
         const url = await getDownloadURL(
           uploadTask.snapshot.ref
         );
-        resolve(url);
+
+        resolve(url); // ✅ يرجع رابط الفيديو
       }
     );
   });

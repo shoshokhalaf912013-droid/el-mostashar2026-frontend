@@ -1,36 +1,49 @@
 .welcome-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.75);
+
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 9999;
-  animation: fadeIn 0.6s ease;
+  justify-content: center;
+
+  z-index: 999999; /* ⭐ الحل الحقيقي */
+
+  backdrop-filter: blur(6px);
 }
 
 .welcome-box {
-  background: #111;
+  background: #000;
+  border: 2px solid gold;
   padding: 40px 60px;
-  border-radius: 20px;
+  border-radius: 18px;
   text-align: center;
-  color: white;
-  box-shadow: 0 0 40px rgba(255,215,0,0.25);
-  animation: scaleIn 0.6s ease;
+
+  box-shadow:
+    0 0 30px rgba(255,215,0,0.6),
+    0 0 80px rgba(255,215,0,0.3);
+
+  animation: welcomeFade 0.6s ease;
 }
 
 .welcome-box h2 {
   color: gold;
+  font-size: 28px;
   margin-bottom: 10px;
 }
 
-@keyframes fadeIn {
-  from {opacity:0;}
-  to {opacity:1;}
+.welcome-box p {
+  color: #ddd;
+  font-size: 18px;
 }
 
-@keyframes scaleIn {
-  from {transform: scale(0.9);}
-  to {transform: scale(1);}
+@keyframes welcomeFade {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

@@ -1,53 +1,16 @@
-import WelcomeOverlay from "@/components/WelcomeOverlay";
-import React, { useEffect, useState } from "react";
+import WelcomeWatermark from "@/components/WelcomeWatermark";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "../../firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-
-// 🔹 Sidebar (قراءة فقط)
-import LessonsSidebar from "./LessonsSidebar";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function StudentDashboard() {
+
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [studentName, setStudentName] = useState("");
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-
-        if (!snap.exists()) {
-          navigate("/login");
-          return;
-        }
-
-        const data = snap.data();
-
-        // ✅ حفظ اسم الطالب للترحيب
-        setStudentName(data.name || "عزيزي الطالب");
-
-        // 🔍 تشخيص فقط – بدون أي تحويل
-        console.log("🔥 StudentDashboard user data:", data);
-        console.log("🎯 gradeId value:", data.gradeId);
-
-      } catch (e) {
-        console.error("❌ StudentDashboard error:", e);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    return () => unsub();
-  }, [navigate]);
-
+  /* ===============================
+     انتظار تحميل Auth من Provider
+  =============================== */
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-yellow-400 text-xl">
@@ -56,33 +19,52 @@ export default function StudentDashboard() {
     );
   }
 
+  /* ===============================
+     غير مسجل دخول
+  =============================== */
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
+  /* ===============================
+     UI
+  =============================== */
   return (
     <div className="flex min-h-screen bg-black text-white">
 
-      {/* ✅ الترحيب اليومي */}
-      <WelcomeOverlay name={studentName} />
+      {/* العلامة المائية */}
+      <WelcomeWatermark
+        name={user.displayName || "عزيزي الطالب"}
+      />
 
-      {/* 🔹 Sidebar تجريبي (قراءة فقط) */}
-      <LessonsSidebar subjectId="ykghsHWpCvsOl4nMVgeQ" />
-
-      {/* 🔹 المحتوى الحالي */}
       <main className="flex-1 text-center mt-20 space-y-6">
+
         <h1 className="text-3xl font-bold text-yellow-400">
           مرحبًا بك 👋
         </h1>
 
         <p className="text-gray-400">
-          من فضلك اختر المرحلة والصف لعرض المواد الدراسية
+          اختر المرحلة أولاً لعرض المواد والمعلمين
         </p>
 
         <button
           onClick={() => navigate("/student/select-stage")}
-          className="px-8 py-3 bg-yellow-500 text-black rounded-xl font-bold"
+          className="
+            px-8 py-3
+            bg-yellow-500
+            hover:bg-yellow-400
+            transition
+            text-black
+            rounded-xl
+            font-bold
+            shadow-lg
+          "
         >
-          الدخول إلى المواد الدراسية
+          🚀 استكمل مسارك التعليمي
         </button>
-      </main>
 
+      </main>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 // src/pages/Student/PrimaryPrepSubjectsView.jsx
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -8,23 +9,42 @@ import {
   where,
   orderBy,
 } from "firebase/firestore";
+
 import { db } from "../../firebase";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function PrimaryPrepSubjectsView() {
+
   const { gradeId } = useParams();
   const navigate = useNavigate();
+
+  const { user, loading: authLoading } = useAuth();
 
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /* ================= FETCH SUBJECTS ================= */
+
   useEffect(() => {
+
+    if (authLoading) return;
+
+    if (!user) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
     if (!gradeId) {
       navigate("/student/select-stage", { replace: true });
       return;
     }
 
     const fetchSubjects = async () => {
+
       try {
+
+        setLoading(true);
+
         const q = query(
           collection(db, "gradeSubjects"),
           where("gradeId", "==", gradeId),
@@ -40,6 +60,7 @@ export default function PrimaryPrepSubjectsView() {
         }));
 
         setSubjects(data);
+
       } catch (e) {
         console.error("PRIMARY_PREP_SUBJECTS_ERROR:", e);
       } finally {
@@ -48,33 +69,42 @@ export default function PrimaryPrepSubjectsView() {
     };
 
     fetchSubjects();
-  }, [gradeId, navigate]);
 
-  if (loading) {
+  }, [gradeId, navigate, user, authLoading]);
+
+  /* ================= LOADING ================= */
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        تحميل...
+        تحميل المواد...
       </div>
     );
   }
+
+  /* ================= EMPTY ================= */
 
   if (!subjects.length) {
     return (
       <div className="min-h-screen bg-black text-red-500 flex items-center justify-center">
-        ❌ لا توجد مواد
+        ❌ لا توجد مواد متاحة
       </div>
     );
   }
 
+  /* ================= UI ================= */
+
   return (
     <div className="min-h-screen bg-black p-10">
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+
         {subjects.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() =>
-              navigate(`/student/units/${gradeId}/${s.subjectId}`)
+              navigate(`/student/primary-prep/units/${gradeId}/${s.subjectId}`)
             }
             className="
               group
@@ -125,6 +155,7 @@ export default function PrimaryPrepSubjectsView() {
             />
           </button>
         ))}
+
       </div>
     </div>
   );

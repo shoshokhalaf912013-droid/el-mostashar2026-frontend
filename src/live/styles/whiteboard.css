@@ -1,0 +1,430 @@
+.whiteboardContainer{
+display:flex;
+height:100vh;
+background:#0b0f2a;
+overflow:hidden;
+}
+
+/* Sidebar */
+
+.liveSidebar{
+width:240px;
+background:#0a1230;
+border-right:3px solid gold;
+padding:15px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.addFileBtn{
+background:linear-gradient(45deg,#d4af37,#ffd700);
+color:#0b0f2a;
+padding:10px;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+text-align:center;
+}
+
+.filesList{
+flex:1;
+overflow:auto;
+}
+
+.fileItem{
+background:#0b0f2a;
+color:white;
+border:2px solid gold;
+padding:8px;
+border-radius:6px;
+margin-bottom:8px;
+cursor:pointer;
+}
+
+/* Board */
+
+.boardStage{
+position:relative;
+flex:1;
+background:white;
+overflow:auto;
+height:100%;
+}
+
+/* File Layer */
+
+.fileLayer{
+position:relative;
+z-index:1;
+}
+
+.fileBody{
+padding:20px;
+}
+
+/* Files */
+
+.boardImage{
+max-width:100%;
+display:block;
+}
+
+.boardPdf{
+width:900px;
+height:1200px;
+border:none;
+}
+
+/* Canvas Layers */
+
+.boardCanvas{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:10;
+pointer-events:none;
+background:transparent;
+}
+
+.tempCanvas{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:20;
+pointer-events:auto;
+cursor:crosshair;
+background:transparent;
+}
+
+/* Toolbar */
+
+.toolbarLayer{
+position:absolute;
+top:15px;
+left:50%;
+transform:translateX(-50%);
+z-index:100;
+}
+
+.toolbar{
+background:#1b1f4a;
+border:2px solid gold;
+border-radius:10px;
+padding:6px;
+display:flex;
+gap:6px;
+align-items:center;
+}
+
+.toolBtn{
+width:50px;
+height:45px;
+background:#0b0f2a;
+border:2px solid gold;
+border-radius:8px;
+color:gold;
+cursor:pointer;
+}
+
+.toolBtn:hover{
+background:gold;
+color:#0b0f2a;
+}
+
+.colorPicker{
+width:36px;
+height:36px;
+cursor:pointer;
+}
+
+.sizeSelect{
+background:#0b0f2a;
+color:gold;
+border:2px solid gold;
+cursor:pointer;
+height:36px;
+}
+
+/* Calculator Button */
+
+.calcBtn{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:6px;
+padding:0 10px;
+height:45px;
+background:#4c1d95;
+color:#ffd700;
+border:2px solid #ffd700;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.calcBtn:hover{
+background:#6d28d9;
+box-shadow:0 0 10px #ffd700;
+}
+
+.calcIcon{
+font-size:16px;
+}
+
+/* Calculator Window Layer */
+
+.calculatorLayer{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+z-index:2147483647;
+}
+
+.calculatorLayer .calculator{
+pointer-events:auto;
+}
+
+/* Close Button */
+
+.closeCalc{
+position:absolute;
+top:-12px;
+right:-12px;
+width:28px;
+height:28px;
+border-radius:50%;
+background:#ff0033;
+color:white;
+border:none;
+font-weight:bold;
+cursor:pointer;
+box-shadow:0 0 10px red;
+}
+
+.closeCalc:hover{
+background:#ff3355;
+}
+
+/* ================= CALCULATOR ================= */
+
+.calculator{
+width:260px;
+background:#000814;
+border:2px solid gold;
+border-radius:14px;
+padding:10px;
+box-shadow:0 0 25px gold;
+color:white;
+font-family:monospace;
+}
+
+/* Drag Bar */
+
+.dragbar{
+background:#111c44;
+padding:6px;
+border-radius:6px;
+cursor:move;
+text-align:center;
+font-weight:bold;
+margin-bottom:6px;
+}
+
+/* Screen */
+
+.screen{
+width:100%;
+height:36px;
+margin-bottom:8px;
+border:none;
+background:black;
+color:#00ffcc;
+font-size:16px;
+padding:5px;
+}
+
+/* Tabs */
+
+.tabs{
+display:flex;
+gap:4px;
+margin-bottom:6px;
+}
+
+.tabs button{
+flex:1;
+background:#0b0f2a;
+color:gold;
+border:1px solid gold;
+cursor:pointer;
+font-size:11px;
+}
+
+/* Buttons Grid */
+
+.calcGrid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:4px;
+}
+
+.calcGrid button{
+background:#0b0f2a;
+border:1px solid gold;
+color:gold;
+padding:8px;
+cursor:pointer;
+}
+
+.calcGrid button:hover{
+background:gold;
+color:black;
+}
+
+/* Tools */
+
+.tools{
+margin-top:6px;
+display:flex;
+gap:4px;
+}
+
+.tools button{
+flex:1;
+background:#1b1f4a;
+border:1px solid gold;
+color:gold;
+cursor:pointer;
+}
+
+/* Matrix */
+
+.matrix-box{
+padding:6px;
+}
+
+.matrix-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:4px;
+margin-top:6px;
+}
+
+.matrix-grid input{
+width:100%;
+background:black;
+border:1px solid gold;
+color:white;
+text-align:center;
+}
+
+.matrix-tools{
+margin-top:6px;
+display:flex;
+gap:4px;
+}
+
+.matrix-tools button{
+flex:1;
+background:#1b1f4a;
+border:1px solid gold;
+color:gold;
+cursor:pointer;
+}
+
+/* Graph */
+
+#graphCanvas{
+background:black;
+margin-top:6px;
+border:1px solid gold;
+}
+
+/* PDF Viewer */
+
+.virtual-pdf{
+display:flex;
+flex-direction:column;
+align-items:center;
+width:100%;
+}
+
+.pdf-page{
+margin-bottom:25px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+
+.pdf-page canvas{
+max-width:100%;
+height:auto;
+display:block;
+}
+
+/* Biology Lab */
+
+.biologyLabLayer{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:520px;
+height:420px;
+background:#000;
+border:2px solid gold;
+border-radius:12px;
+box-shadow:0 0 25px rgba(0,0,0,0.7);
+z-index:2147483647;
+overflow:hidden;
+}
+
+/* ================= LAB MENU ================= */
+
+.labMenuWrapper{
+position:relative;
+}
+
+.labDropdown{
+position:absolute;
+top:48px;
+left:0;
+background:#0b1b3b;
+border:2px solid gold;
+border-radius:8px;
+display:flex;
+flex-direction:column;
+padding:6px;
+z-index:5000;
+min-width:180px;
+box-shadow:0 0 12px rgba(0,0,0,0.5);
+}
+
+.labItem{
+background:none;
+border:none;
+color:white;
+padding:8px 12px;
+cursor:pointer;
+text-align:left;
+font-size:14px;
+transition:0.2s;
+}
+
+.labItem:hover{
+background:#1f3d7a;
+}
+.r3fLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* 👈 يخلي الرسم يشتغل */
+}

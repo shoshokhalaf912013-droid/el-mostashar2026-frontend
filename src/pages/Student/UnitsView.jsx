@@ -17,16 +17,35 @@ export default function UnitsView() {
   const { gradeId, subjectId } = useParams();
   const navigate = useNavigate();
 
-  /* ✅ جلب الرول الصحيح */
-  const { user, role } = useAuth();
+  const { role } = useAuth();
 
   const [units, setUnits] = useState([]);
 
-  /* ✅ صلاحيات حقيقية */
   const canManage =
     role === "super-admin" ||
     role === "admin" ||
     role === "teacher";
+
+  /* ===== تحديد المرحلة ===== */
+
+  const getStageFromGrade = (gradeId) => {
+
+    if (!gradeId) return "secondary";
+
+    if (gradeId.startsWith("primary")) return "primary-prep";
+
+    if (gradeId.startsWith("prep")) return "primary-prep";
+
+    if (gradeId.startsWith("sec")) return "secondary";
+
+    if (gradeId.startsWith("bac")) return "bac";
+
+    return "secondary";
+  };
+
+  const stage = getStageFromGrade(gradeId);
+
+  /* ================= LOAD UNITS ================= */
 
   useEffect(() => {
     loadUnits();
@@ -51,14 +70,11 @@ export default function UnitsView() {
     setUnits(data);
   }
 
-  /* ================= ADD ================= */
+  /* ================= ADD UNIT ================= */
 
   async function handleAddUnit() {
 
-    if (!canManage) {
-      console.log("❌ NO PERMISSION");
-      return;
-    }
+    if (!canManage) return;
 
     const nextOrder =
       units.length > 0
@@ -99,21 +115,29 @@ export default function UnitsView() {
         </div>
 
         <div className="flex flex-col gap-8">
+
           {units.map((unit) => (
-            <UnitCard
+
+            <div
               key={unit.id}
-              unit={unit}
-              canManage={canManage}
               onClick={() =>
                 navigate(
-                  `/student/secondary/lessons/${gradeId}/${subjectId}/${unit.unitId}`
+                  `/student/${stage}/lessons/${gradeId}/${subjectId}/${unit.unitId}`
                 )
               }
-            />
+            >
+              <UnitCard
+                unit={unit}
+                canManage={canManage}
+              />
+            </div>
+
           ))}
+
         </div>
 
       </div>
+
     </div>
   );
 }

@@ -1,116 +1,222 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import "./ExamPage.css"
+import {useEffect,useState} from "react"
+import {useParams,useNavigate} from "react-router-dom"
 
-import "../../styles/sa-student.css";
-import "./styles/exam.css";
+import {doc,getDoc,collection,addDoc} from "firebase/firestore"
+import {db} from "../../firebase"
+import {useAuth} from "../../contexts/AuthContext"
 
-const ExamPage = () => {
-  const { id: examId } = useParams();
+import ExamTimer from "../../components/ExamTimer";
+import QuestionCard from "../../components/QuestionCard";
 
-  const [exam, setExam] = useState(null);
-  const [answers, setAnswers] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(true);
+export default function ExamPage(){
 
-  /* ================= جلب الامتحان ================= */
-  useEffect(() => {
-    const fetchExam = async () => {
-      try {
-        const ref = doc(db, "exams", examId);
-        const snap = await getDoc(ref);
+const {gradeId,subjectId,unitId,lessonId}=useParams()
+const {user}=useAuth()
+const navigate=useNavigate()
 
-        if (snap.exists()) {
-          setExam(snap.data());
-        } else {
-          alert("الامتحان غير موجود");
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
+const [exam,setExam]=useState(null)
+const [answers,setAnswers]=useState({})
+const [submitted,setSubmitted]=useState(false)
 
-    if (examId) fetchExam();
-  }, [examId]);
+const examRef=doc(
+db,
+"grades",gradeId,
+"subjects",subjectId,
+"units",unitId,
+"lessons",lessonId,
+"exam","main"
+)
 
-  /* ================= اختيار إجابة ================= */
-  const handleSelect = (qIndex, choice) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [qIndex]: choice,
-    }));
-  };
+useEffect(()=>{
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-  };
+loadExam()
 
-  if (loading) {
-    return <div className="exam-loading">جار تحميل الامتحان...</div>;
-  }
+preventCheating()
 
-  if (!exam) {
-    return <div className="exam-loading">لم يتم العثور على الامتحان</div>;
-  }
+},[])
 
-  return (
-    <div className="exam-container">
-      <h2 className="exam-title">
-        {exam.title || "امتحان على الدرس"}
-      </h2>
+const loadExam=async()=>{
 
-      {exam.description && (
-        <p className="exam-desc">{exam.description}</p>
-      )}
+const snap=await getDoc(examRef)
 
-      {!submitted ? (
-        <div className="exam-questions">
-          {exam.questions?.map((q, index) => (
-            <div key={index} className="exam-question-box">
-              <h3 className="exam-question">
-                {index + 1}. {q.question}
-              </h3>
+if(!snap.exists()){
+alert("لا يوجد امتحان")
+navigate(-1)
+return
+}
 
-              <div className="exam-choices">
-                {Object.entries(q.options).map(
-                  ([key, value]) => (
-                    <label key={key} className="exam-choice">
-                      <input
-                        type="radio"
-                        name={`q-${index}`}
-                        value={key}
-                        onChange={() =>
-                          handleSelect(index, key)
-                        }
-                      />
-                      <span>
-                        {key}. {value}
-                      </span>
-                    </label>
-                  )
-                )}
-              </div>
-            </div>
-          ))}
+setExam(snap.data())
 
-          <button
-            className="exam-submit-btn"
-            onClick={handleSubmit}
-          >
-            إرسال الامتحان
-          </button>
-        </div>
-      ) : (
-        <div className="exam-result-box">
-          <h3>تم إرسال الامتحان بنجاح ✔</h3>
-          <p>سيتم تصحيح الامتحان لاحقًا.</p>
-        </div>
-      )}
-    </div>
-  );
-};
+}
 
-export default ExamPage;
+const preventCheating=()=>{
+
+/* منع النسخ */
+
+document.addEventListener("copy",(e)=>e.preventDefault())
+
+/* منع كليك يمين */
+
+document.addEventListener("contextmenu",(e)=>e.preventDefault())
+
+/* منع PrintScreen */
+
+document.addEventListener("keyup",(e)=>{
+
+if(e.key==="PrintScreen"){
+alert("تصوير الشاشة غير مسموح")
+}
+
+})
+
+/* منع تغيير التبويب */
+
+document.addEventListener("visibilitychange",()=>{
+
+if(document.hidden){
+alert("تم الخروج من الامتحان")
+submitExam()
+}
+
+})
+
+}
+
+const selectAnswer=(qIndex,option)=>{
+
+setAnswers({
+...answers,
+[qIndex]:option
+})
+
+}
+
+const calculateScore=()=>{
+
+let score=0
+
+exam.questions.forEach((q,i)=>{
+
+if(answers[i]===q.correct){
+score++
+}
+
+})
+
+return score
+
+}
+
+const submitExam=async()=>{
+
+if(submitted)return
+
+setSubmitted(true)
+
+const score=calculateScore()
+
+await addDoc(
+
+collection(db,"examResults"),
+
+{
+
+userId:user.uid,
+
+lessonId,
+
+score,
+
+total:exam.questions.length,
+
+answers,
+
+date:Date.now()
+
+}
+
+)
+
+navigate("/student/exam-result",{
+
+state:{
+score,
+total:exam.questions.length
+}
+
+})
+
+}
+
+if(!exam){
+
+return <div className="exam-loading">تحميل الامتحان...</div>
+
+}
+
+return(
+
+<div className="exam-page">
+
+<h2 className="exam-title">
+
+{exam.title || "الامتحان"}
+
+</h2>
+
+{/* TIMER */}
+
+<ExamTimer
+
+minutes={exam.timeLimit || 60}
+
+onFinish={submitExam}
+
+/>
+
+{/* QUESTIONS */}
+
+<div className="questions-container">
+
+{exam.questions.map((q,i)=>(
+
+<QuestionCard
+
+key={i}
+
+index={i}
+
+question={q}
+
+selected={answers[i]}
+
+onSelect={selectAnswer}
+
+/>
+
+))}
+
+</div>
+
+{/* SUBMIT */}
+
+<button
+
+className="submit-exam"
+
+onClick={submitExam}
+
+disabled={submitted}
+
+>
+
+تسليم الامتحان
+
+</button>
+
+</div>
+
+)
+
+}

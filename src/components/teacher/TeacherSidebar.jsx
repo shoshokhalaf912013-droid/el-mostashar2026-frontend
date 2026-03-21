@@ -26,10 +26,27 @@ export default function TeacherSidebar() {
 
       <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <SidebarLink to="/teacher">🏠 لوحة التحكم</SidebarLink>
-        <SidebarLink to="/teacher/lessons">📚 دروسي</SidebarLink>
-        <SidebarLink to="/teacher/lessons/add">➕ إضافة درس</SidebarLink>
-        <SidebarLink to="/teacher/exams">📝 امتحاناتي</SidebarLink>
-        <SidebarLink to="/profile">⚙️ ملفي الشخصي</SidebarLink>
+
+        <SidebarLink to="/teacher/lessons">
+          📚 دروسي
+        </SidebarLink>
+
+        <SidebarLink to="/teacher/lessons/add">
+          ➕ إضافة درس
+        </SidebarLink>
+
+        <SidebarLink to="/teacher/exams">
+          📝 امتحاناتي
+        </SidebarLink>
+
+        {/* ⭐ LIVE MANAGEMENT */}
+        <SidebarLink to="/teacher/live">
+          🎥 إدارة اللايف
+        </SidebarLink>
+
+        <SidebarLink to="/profile">
+          ⚙️ ملفي الشخصي
+        </SidebarLink>
       </nav>
     </aside>
   );

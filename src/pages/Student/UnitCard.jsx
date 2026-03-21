@@ -5,7 +5,7 @@ import { db } from "../../firebase";
 import { useAuth } from "../../contexts/AuthContext";
 import "./UnitCard.css";
 
-export default function UnitCard({ unit }) {
+export default function UnitCard({ unit, stage, gradeId, subjectId }) {
 
   const navigate = useNavigate();
   const { role } = useAuth();
@@ -14,11 +14,6 @@ export default function UnitCard({ unit }) {
   const [editing, setEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(unit.title);
 
-  /* ===================================================
-     ✅ الصلاحيات الحقيقية
-     لا تظهر قبل تحميل الدور
-  =================================================== */
-
   const canManage =
     role &&
     (role === "super-admin" || role === "admin");
@@ -26,15 +21,19 @@ export default function UnitCard({ unit }) {
   /* ================= OPEN UNIT ================= */
 
   const openUnit = () => {
+
     navigate(
-      `/student/secondary/lessons/${unit.gradeId}/${unit.subjectId}/${unit.unitId}`
+      `/student/${stage}/lessons/${gradeId}/${subjectId}/${unit.unitId}`
     );
+
   };
 
-  /* ================= EDIT TITLE ================= */
+  /* ================= EDIT ================= */
 
   const saveTitle = async () => {
+
     try {
+
       await updateDoc(doc(db, "units", unit.id), {
         title: newTitle,
       });
@@ -43,17 +42,20 @@ export default function UnitCard({ unit }) {
       setShowActions(false);
 
     } catch (err) {
-      console.error("Edit error:", err);
+      console.error(err);
     }
   };
 
   /* ================= DISABLE ================= */
 
   const disableUnit = async () => {
+
     try {
+
       await updateDoc(doc(db, "units", unit.id), {
         active: false,
       });
+
     } catch (err) {
       console.error(err);
     }
@@ -62,27 +64,22 @@ export default function UnitCard({ unit }) {
   /* ================= DELETE ================= */
 
   const deleteUnit = async () => {
-    const ok = window.confirm("هل تريد حذف الوحدة نهائياً؟");
+
+    const ok = window.confirm("هل تريد حذف الوحدة؟");
     if (!ok) return;
 
     try {
+
       await deleteDoc(doc(db, "units", unit.id));
+
     } catch (err) {
       console.error(err);
     }
   };
 
-  /* ================= DEBUG (احذفه لاحقاً) ================= */
-
-  console.log("ROLE =", role);
-  console.log("CAN MANAGE =", canManage);
-
-  /* ================= UI ================= */
-
   return (
     <div className="unit-card">
 
-      {/* ===== HEADER ===== */}
       <div className="unit-header">
 
         {!editing ? (
@@ -97,7 +94,6 @@ export default function UnitCard({ unit }) {
           />
         )}
 
-        {/* ⚙ يظهر فقط للإدارة */}
         {canManage && (
           <div
             className="gear-btn"
@@ -109,7 +105,6 @@ export default function UnitCard({ unit }) {
 
       </div>
 
-      {/* ===== ACTION BUTTONS ===== */}
       {canManage && showActions && (
         <div className="unit-actions">
 

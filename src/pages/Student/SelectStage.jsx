@@ -15,7 +15,7 @@ export default function SelectStage() {
         اختر المرحلة
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {stages.map((stage) => (
           <div
             key={stage.id}

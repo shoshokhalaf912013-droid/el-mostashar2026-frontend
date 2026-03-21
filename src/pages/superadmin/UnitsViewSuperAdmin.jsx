@@ -14,7 +14,6 @@ import { db } from "../../firebase";
 
 import UnitCard from "../Student/UnitCard";
 
-
 export default function UnitsViewSuperAdmin() {
   const { systemId, gradeId, subjectId } = useParams();
   const navigate = useNavigate();
@@ -42,6 +41,7 @@ export default function UnitsViewSuperAdmin() {
       );
 
       const snap = await getDocs(q);
+
       const data = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -102,13 +102,14 @@ export default function UnitsViewSuperAdmin() {
       await updateDoc(doc(db, "units", unit.id), {
         active: !unit.active,
       });
+
       loadUnits();
     } catch (err) {
       console.error("❌ Toggle unit failed:", err);
     }
   }
 
-  /* ================= RENDER ================= */
+  /* ================= LOADING ================= */
   if (loading) {
     return (
       <div className="p-10 text-yellow-400 text-lg">
@@ -117,6 +118,7 @@ export default function UnitsViewSuperAdmin() {
     );
   }
 
+  /* ================= UI ================= */
   return (
     <div className="p-10 space-y-8 text-yellow-400">
       {/* ===== HEADER ===== */}
@@ -135,12 +137,9 @@ export default function UnitsViewSuperAdmin() {
         </button>
       </div>
 
-      {/* ===== ADD UNIT PANEL ===== */}
+      {/* ===== ADD PANEL ===== */}
       {showAdd && (
-        <div
-          className="bg-black border border-yellow-500/40
-                     rounded-2xl p-6 space-y-4"
-        >
+        <div className="bg-black border border-yellow-500/40 rounded-2xl p-6 space-y-4">
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
@@ -162,8 +161,7 @@ export default function UnitsViewSuperAdmin() {
 
             <button
               onClick={() => setShowAdd(false)}
-              className="px-6 py-2 rounded-xl
-                         bg-zinc-800 text-yellow-300"
+              className="px-6 py-2 rounded-xl bg-zinc-800 text-yellow-300"
             >
               إلغاء
             </button>
@@ -183,8 +181,10 @@ export default function UnitsViewSuperAdmin() {
               key={unit.id}
               className="flex items-center justify-between gap-6"
             >
+              {/* ✅ التعديل الحقيقي هنا */}
               <UnitCard
                 unit={unit}
+                isAdmin={true}
                 onClick={() =>
                   navigate(
                     `/super-admin/lessons/${systemId}/${gradeId}/${subjectId}/${unit.unitId}/add`

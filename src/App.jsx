@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // styles
@@ -10,11 +10,20 @@ import "./styles/layout.css";
 // auth
 import { useAuth } from "./contexts/AuthContext";
 
+// firebase
+import { db } from "./firebase";
+import { doc, getDoc } from "firebase/firestore";
+
 // layout
 import Layout from "./components/Layout.jsx";
 
+// birthday
+import BirthdaySystem from "./components/BirthdaySystem";
+import GlobalCelebrationLayer from "./components/GlobalCelebrationLayer";
+
 // pages
 import Home from "./pages/Home.jsx";
+import MostasharHome from "./pages/MostasharHome.jsx"; // ⭐ منصة المستشار
 import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
 import Policy from "./pages/Policy.jsx";
@@ -22,6 +31,7 @@ import SubscriptionPlans from "./pages/SubscriptionPlans.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Profile from "./pages/Profile.jsx";
+import SetTeacherRole from "./pages/SetTeacherRole";
 
 // routes
 import CoursesRoutes from "./routes/CoursesRoutes.jsx";
@@ -32,76 +42,209 @@ import SuperAdminRoutes from "./routes/SuperAdminRoutes.jsx";
 import TeacherRoutes from "./routes/TeacherRoutes.jsx";
 
 export default function App() {
-  const location = useLocation();
-  const isHome = location.pathname === "/";
 
+  const location = useLocation();
   const { user, role, loading } = useAuth();
 
-  if (loading) {
+  const [studentName, setStudentName] = useState("");
+
+  /* ================= LOAD NAME ================= */
+
+  useEffect(() => {
+
+    if (!user?.uid) {
+      setStudentName("");
+      return;
+    }
+
+    const fetchName = async () => {
+
+      try {
+
+        const snap = await getDoc(doc(db, "users", user.uid));
+
+        if (snap.exists()) {
+
+          const data = snap.data();
+
+          const name =
+            data.fullName ||
+            data.name ||
+            user.displayName ||
+            user.email?.split("@")[0] ||
+            "";
+
+          setStudentName(name);
+
+        }
+
+      } catch (err) {
+
+        console.error("Name Load Error:", err);
+
+      }
+
+    };
+
+    fetchName();
+
+  }, [user]);
+
+  /* ================= GLOBAL LOADING ================= */
+
+  if (loading || (user && !role)) {
+
     return (
       <div className="h-screen flex items-center justify-center text-yellow-400 text-xl">
-        ⏳ جاري التحقق من الحساب...
+        ⏳ جاري تجهيز المنصة...
       </div>
     );
+
   }
 
-  const isSuperAdmin = role === "super-admin";
-  const isAdmin = role === "admin";
-  const isTeacher = role === "teacher";
-  const isStudent = role === "student";
+  /* ================= ROLES ================= */
+
+  const normalizedRole = role?.toLowerCase();
+
+  const isSuperAdmin = normalizedRole === "super-admin";
+  const isAdmin = normalizedRole === "admin";
+  const isTeacher = normalizedRole === "teacher";
+  const isStudent = normalizedRole === "student";
 
   const canUpload = isAdmin || isSuperAdmin || isTeacher;
 
+  const isAuthPage =
+    location.pathname === "/login" ||
+    location.pathname === "/register";
+
+  const isHome = location.pathname === "/";
+
+  /* ================= APP ================= */
+
   return (
-    <Routes>
-      {/* ================= AUTH ================= */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/student/register" element={<Register />} />
+    <>
 
-      {/* ================= PUBLIC + MAIN LAYOUT ================= */}
-      <Route
-        path="/"
-        element={
-          <Layout
-            user={user}
-            role={role}
-            isSuperAdmin={isSuperAdmin}
-            isAdmin={isAdmin}
-            isTeacher={isTeacher}
-            isStudent={isStudent}
-            canUpload={canUpload}
-            isHome={isHome}
-          />
-        }
-      >
-        {/* public pages */}
-        <Route index element={<Home />} />
-        <Route path="subscription-plans" element={<SubscriptionPlans />} />
-        <Route path="about" element={<About />} />
-        <Route path="contact" element={<Contact />} />
-        <Route path="policy" element={<Policy />} />
+      {/* ⭐ احتفالات الطالب */}
 
-        {/* modules */}
-        <Route path="courses/*" element={<CoursesRoutes />} />
-        <Route path="exams/*" element={<ExamsRoutes />} />
+      {user && isStudent && !isAuthPage && studentName && (
 
-        {/* profile */}
+        <>
+          <BirthdaySystem user={user} />
+          <GlobalCelebrationLayer studentName={studentName} />
+        </>
+
+      )}
+
+      <Routes>
+
+        {/* ⭐ منصة المستشار التجريبية */}
+
+        <Route path="/mostashar" element={<MostasharHome />} />
+
+        {/* LOGIN */}
+
         <Route
-          path="profile"
-          element={user ? <Profile /> : <Navigate to="/login" />}
+          path="/login"
+          element={!user ? <Login /> : <Navigate to="/student" replace />}
         />
-      </Route>
 
-      {/* ================= STUDENT (INDEPENDENT) ================= */}
-      <Route path="/student/*" element={<StudentRoutes />} />
+        {/* REGISTER */}
 
-      {/* ================= DASHBOARDS ================= */}
-      <Route path="/super-admin/*" element={<SuperAdminRoutes />} />
-      <Route path="/admin/*" element={<AdminRoutes />} />
-      <Route path="/teacher/*" element={<TeacherRoutes />} />
+        <Route
+          path="/register"
+          element={!user ? <Register /> : <Navigate to="/student" replace />}
+        />
 
-      {/* ================= FALLBACK ================= */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* MAIN LAYOUT */}
+
+        <Route
+          path="/"
+          element={
+            <Layout
+              user={user}
+              role={role}
+              isSuperAdmin={isSuperAdmin}
+              isAdmin={isAdmin}
+              isTeacher={isTeacher}
+              isStudent={isStudent}
+              canUpload={canUpload}
+              isHome={isHome}
+            />
+          }
+        >
+
+          <Route index element={<Home />} />
+
+          <Route path="subscription-plans" element={<SubscriptionPlans />} />
+          <Route path="about" element={<About />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="policy" element={<Policy />} />
+
+          <Route path="courses/*" element={<CoursesRoutes />} />
+          <Route path="exams/*" element={<ExamsRoutes />} />
+
+          <Route
+            path="profile"
+            element={user ? <Profile /> : <Navigate to="/login" />}
+          />
+
+        </Route>
+
+        {/* STUDENT */}
+
+        <Route
+          path="/student/*"
+          element={user ? <StudentRoutes /> : <Navigate to="/login" replace />}
+        />
+
+        {/* SUPER ADMIN */}
+
+        <Route
+          path="/super-admin/*"
+          element={
+            isSuperAdmin ? <SuperAdminRoutes /> : <Navigate to="/" replace />
+          }
+        />
+
+        {/* ADMIN */}
+
+        <Route
+          path="/admin/*"
+          element={
+            isAdmin || isSuperAdmin ? (
+              <AdminRoutes />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        {/* TEACHER */}
+
+        <Route
+          path="/teacher/*"
+          element={
+            isTeacher || isAdmin || isSuperAdmin ? (
+              <TeacherRoutes />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        {/* FIX ROLE */}
+
+        <Route
+          path="/fix-role"
+          element={user ? <SetTeacherRole /> : <Navigate to="/login" replace />}
+        />
+
+        {/* 404 */}
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+      </Routes>
+
+    </>
   );
 }

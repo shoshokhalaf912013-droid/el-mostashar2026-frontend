@@ -1,13 +1,11 @@
 import "./UnitsViewGeneral.css";
 import { addNextUnit } from "@/utils/addNextUnit";
 import { useEffect, useState } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
 import UnitCard from "./UnitCard";
 import useUserRole from "@/hooks/useUserRole";
-
-/* ================= Arabic Names ================= */
 
 const getUnitArabicName = (num) => {
   const map = {
@@ -30,45 +28,53 @@ const getUnitArabicName = (num) => {
 
 export default function UnitsViewGeneral() {
 
-  const params = useParams();
-  const location = useLocation();
+  const { gradeId, subjectId } = useParams();
   const navigate = useNavigate();
 
-  /* ✅ جلب الدور */
   const { role } = useUserRole();
 
-  /* ✅ صلاحيات الإدارة */
   const canManageUnits =
     role === "super-admin" || role === "teacher";
 
   const [units, setUnits] = useState([]);
 
-  /* ===== PARAMS SAFE ===== */
+  /* ===== تحديد المرحلة ===== */
 
-  const stageIdFromUrl =
-    params.stageId || location.pathname.split("/")[2];
+  const getStageFromGrade = (gradeId) => {
 
-  const gradeId = params.gradeId;
-  const subjectId = params.subjectId;
+    if (!gradeId) return "secondary";
+
+    if (gradeId.startsWith("primary")) return "primary-prep";
+
+    if (gradeId.startsWith("prep")) return "primary-prep";
+
+    if (gradeId.startsWith("sec")) return "secondary";
+
+    if (gradeId.startsWith("bac")) return "bac";
+
+    return "secondary";
+  };
+
+  const stageId = getStageFromGrade(gradeId);
 
   const stageMap = {
     "primary-prep": "primary",
-    "prep": "prep",
     "secondary": "secondary",
+    "bac": "secondary",
   };
 
-  const stageId = stageMap[stageIdFromUrl];
+  const stageIdForDB = stageMap[stageId];
 
   /* ===== LOAD UNITS ===== */
 
   const loadUnits = async () => {
 
-    if (!stageId || !gradeId || !subjectId) return;
+    if (!stageIdForDB || !gradeId || !subjectId) return;
 
     const q = query(
       collection(db, "units"),
       where("systemId", "==", "general"),
-      where("stageId", "==", stageId),
+      where("stageId", "==", stageIdForDB),
       where("gradeId", "==", gradeId),
       where("subjectId", "==", subjectId)
     );
@@ -87,19 +93,16 @@ export default function UnitsViewGeneral() {
 
   useEffect(() => {
     loadUnits();
-  }, [stageId, gradeId, subjectId]);
-
-  /* ================= UI ================= */
+  }, [stageIdForDB, gradeId, subjectId]);
 
   return (
     <div className="units-container">
 
-      {/* ✅ زر الإضافة يظهر فقط للإدارة */}
       {canManageUnits && (
         <button
           className="add-unit-btn"
           onClick={async () => {
-            await addNextUnit(stageId, gradeId, subjectId);
+            await addNextUnit(stageIdForDB, gradeId, subjectId);
             await loadUnits();
           }}
         >
@@ -115,19 +118,19 @@ export default function UnitsViewGeneral() {
           u.title || `الوحدة ${getUnitArabicName(order)}`;
 
         return (
-          <UnitCard
+          <div
             key={u.id}
-            unit={{ ...u, title: displayTitle }}
-
-            /* ✅ الإصلاح الحقيقي هنا */
-            canManage={canManageUnits}
-
             onClick={() =>
               navigate(
-                `/student/${stageIdFromUrl}/lessons/${gradeId}/${subjectId}/${u.unitId}`
+                `/student/${stageId}/lessons/${gradeId}/${subjectId}/${u.unitId}`
               )
             }
-          />
+          >
+            <UnitCard
+              unit={{ ...u, title: displayTitle }}
+              canManage={canManageUnits}
+            />
+          </div>
         );
       })}
 

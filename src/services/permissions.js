@@ -56,3 +56,70 @@ export const canDeleteContent = (userData) => {
 export const canDisableContent = (userData) => {
   return isSuperAdmin(userData);
 };
+// ======================================
+// LIVE PERMISSIONS
+// ======================================
+
+// 🔴 بدء البث
+export const canStartLive = (userData) => {
+  if (!userData) return false;
+  if (isSuperAdmin(userData)) return true;
+
+  const role = getRole(userData);
+  return role === "teacher";
+};
+
+// 🔴 إنهاء البث
+export const canEndLive = (userData) => {
+  if (!userData) return false;
+  if (isSuperAdmin(userData)) return true;
+
+  const role = getRole(userData);
+  return role === "teacher";
+};
+
+// 🎤 التحكم في المايك
+export const canControlMic = (userData) => {
+  if (!userData) return false;
+  if (isSuperAdmin(userData)) return true;
+
+  const role = getRole(userData);
+  return role === "teacher";
+};
+
+// 🎥 التحكم في الكاميرا (حسب إذن السوبر داخل الغرفة)
+export const canControlCamera = (userData, roomData) => {
+  if (!userData) return false;
+
+  if (isSuperAdmin(userData)) return true;
+
+  const role = getRole(userData);
+
+  if (role !== "teacher") return false;
+
+  // السوبر يحدد من داخل الغرفة
+  return roomData?.permissions?.teachercameraallowed === true;
+};
+
+// ✋ رفع اليد (طالب)
+export const canRaiseHand = (userData) => {
+  if (!userData) return false;
+
+  const role = getRole(userData);
+  return role === "student";
+};
+
+// 👥 دخول غرفة لايف
+export const canJoinLive = (userData) => {
+  if (!userData) return false;
+
+  const role = getRole(userData);
+
+  const allowedRoles = new Set([
+    "student",
+    "teacher",
+    "super-admin"
+  ]);
+
+  return allowedRoles.has(role);
+};

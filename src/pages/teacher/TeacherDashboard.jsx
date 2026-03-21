@@ -1,11 +1,30 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import RoleSidebar from "../../components/shared/RoleSidebar";
 import RoleNavbar from "../../components/shared/RoleNavbar";
 
+import "../../styles/teacherdashboard.css";
+
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase";
+
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+
+  const [isLiveActive, setIsLiveActive] = useState(false);
+
+  const classId = "demo-class";
+
+  useEffect(() => {
+    const ref = collection(db, "liveClasses", classId, "pulse");
+
+    const unsubscribe = onSnapshot(ref, (snapshot) => {
+      setIsLiveActive(!snapshot.empty);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const cards = [
     {
@@ -23,14 +42,23 @@ export default function TeacherDashboard() {
       desc: "إدارة الأسئلة والاختبارات",
       path: "/lessons/manage",
     },
+    {
+      title: "تقارير الامتحانات",
+      desc: "تحليل أداء الطلاب",
+      path: "/teacher/exam-analytics",
+    },
+    {
+      title: "إدارة اللايف",
+      desc: "متابعة الحصة المباشرة",
+      path: "/teacher/live",
+      live: true,
+    },
   ];
 
   return (
     <div className="flex min-h-screen bg-black text-white" dir="rtl">
-      {/* Sidebar ذكي */}
       <RoleSidebar role="teacher" />
 
-      {/* المحتوى */}
       <div className="flex-1">
         <RoleNavbar role="teacher" />
 
@@ -44,13 +72,16 @@ export default function TeacherDashboard() {
               <div
                 key={i}
                 onClick={() => navigate(card.path)}
-                className="cursor-pointer bg-[#111] border border-blue-600/40 rounded-2xl p-6
-                           hover:border-blue-500 hover:shadow-lg transition"
+                className={`goldcard ${
+                  card.live && isLiveActive ? "liveactive" : ""
+                }`}
               >
-                <h2 className="text-xl font-bold text-blue-300 mb-2">
-                  {card.title}
-                </h2>
-                <p className="text-gray-300 text-sm">{card.desc}</p>
+                {card.live && isLiveActive && (
+                  <div className="livebadge">LIVE NOW</div>
+                )}
+
+                <h2 className="goldtitle">{card.title}</h2>
+                <p className="golddesc">{card.desc}</p>
               </div>
             ))}
           </div>

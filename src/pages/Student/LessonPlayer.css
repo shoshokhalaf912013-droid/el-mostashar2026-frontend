@@ -1,202 +1,179 @@
-/* =====================================================
-   LESSON PLAYER PAGE
-===================================================== */
-
-.lesson-player-page {
-  min-height: 100vh;
-  background: #000;
-  color: #fff;
-  padding: 40px 20px;
-  max-width: 900px;
-  margin: auto;
+body{
+background:#000;
+font-family:"Cairo",sans-serif;
 }
 
-/* ================= TITLE ================= */
+/* الصفحة */
 
-.lesson-title {
-  font-size: 28px;
-  color: #d4af37;
-  margin-bottom: 20px;
-}
-
-/* ================= BLOCK ================= */
-
-.lesson-block {
-  border: 1px dashed #d4af37;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 30px;
-  background: #0b0b0b;
-  position: relative;
-}
-
-.block-header {
-  color: #d4af37;
-  margin-bottom: 12px;
-  font-weight: bold;
-}
-
-/* ================= VIDEO ================= */
-
-.lesson-video {
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid #d4af37;
-  background: black;
-}
-
-/* ================= TEXT ================= */
-
-.lesson-text {
-  line-height: 1.8;
-  color: #eee;
-}
-
-/* ================= PDF ================= */
-
-.pdf-btn {
-  display: inline-block;
-  padding: 10px 22px;
-  border-radius: 10px;
-  border: 1px solid #d4af37;
-  color: #d4af37;
-  text-decoration: none;
-  cursor: pointer;
-  transition: 0.3s;
-  background: black;
-}
-
-.pdf-btn:hover {
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
-}
-
-/* ================= FLOW BUILDER ================= */
-
-.flow-builder {
-  border: 1px solid #222;
-  background: #0f0f0f;
-  padding: 20px;
-  border-radius: 14px;
-  margin-bottom: 30px;
-}
-
-.flow-builder h3 {
-  color: gold;
-  margin-bottom: 15px;
-}
-
-.flow-builder button {
-  background: black;
-  color: gold;
-  border: 1px solid gold;
-  padding: 10px 18px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.25s;
-}
-
-.flow-builder button:hover {
-  box-shadow: 0 0 10px gold;
-}
-
-/* ================= BACK BUTTON ================= */
-
-.back-btn {
-  background: transparent;
-  border: 1px solid #444;
-  color: #aaa;
-  padding: 6px 14px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  cursor: pointer;
-}
-
-.back-btn:hover {
-  color: white;
-  border-color: #d4af37;
-}
-
-/* ================= EMPTY ================= */
-
-.page {
-  min-height: 60vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #aaa;
-  font-size: 18px;
-}
 .lesson-player{
-  max-width:1000px;
-  margin:auto;
-  padding:30px;
-  color:white;
-  background:#000;
+max-width:900px;
+margin:auto;
+padding:40px 20px;
+color:#fff;
 }
+
+/* عنوان الدرس */
+
+.lesson-title{
+text-align:center;
+color:#ffd500;
+margin-bottom:30px;
+}
+
+/* الصندوق */
 
 .lesson-block{
-  margin-bottom:35px;
-  border:1px dashed gold;
-  padding:20px;
-  border-radius:14px;
+border:2px solid #ffd500;
+border-radius:12px;
+padding:20px;
+margin-bottom:25px;
+box-shadow:0 0 15px #ffd500;
 }
 
-.block-label{
-  color:gold;
-  margin-bottom:10px;
+/* العنوان داخل الصندوق */
+
+.lesson-block h3{
+margin-bottom:15px;
+font-size:18px;
+color:#ffd500;
 }
 
-/* VIDEO */
+/* الفيديو */
+
 .video-player{
-  width:100%;
-  aspect-ratio:16/9;
-  object-fit:contain;
-  background:black;
-  border-radius:12px;
+width:100%;
+aspect-ratio:16/9;
+border-radius:10px;
+background:#000;
+margin-bottom:15px;
 }
 
-/* PDF */
-.pdf-container{
-  width:100%;
-  height:700px;
-  background:#111;
-  border-radius:12px;
-  overflow:hidden;
+/* حقل الإدخال */
+
+.youtube-input{
+width:100%;
+padding:10px;
+border-radius:8px;
+border:1px solid #ffd500;
+background:#111;
+color:#fff;
+margin-bottom:10px;
 }
 
-.pdf-viewer{
-  width:100%;
-  height:100%;
-  border:none;
+/* توزيع الأزرار */
+
+.button-row{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:10px;
+margin-top:10px;
 }
 
-/* BUTTON */
-.upload-btn{
-  background:black;
-  color:gold;
-  border:1px solid gold;
-  padding:10px 18px;
-  border-radius:10px;
-  cursor:pointer;
+/* زر */
+
+.gold-btn{
+background:#ffd500;
+color:#000;
+border:none;
+padding:10px;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+transition:.2s;
 }
 
-/* PROGRESS */
-.progress-wrapper{
-  margin-top:12px;
-  width:100%;
-  background:#222;
-  border-radius:10px;
-  overflow:hidden;
+.gold-btn:hover{
+background:#ffea00;
 }
+
+/* زر أحمر */
+
+.red-btn{
+background:#d60000;
+color:#fff;
+border:none;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+}
+
+/* زر PDF */
+
+.pdf-btn{
+display:inline-block;
+background:#ffd500;
+color:#000;
+padding:8px 12px;
+border-radius:6px;
+text-decoration:none;
+}
+
+/* زر الرجوع */
+
+.back-btn{
+position:fixed;
+top:20px;
+right:20px;
+background:#ffd500;
+border:none;
+padding:8px 14px;
+border-radius:8px;
+cursor:pointer;
+}
+
+/* progress bar */
+
+.progress-box{
+margin-top:10px;
+background:#222;
+border-radius:10px;
+height:22px;
+position:relative;
+overflow:hidden;
+}
+
+/* الشريط المتحرك */
 
 .progress-bar{
-  height:10px;
-  background:gold;
-  transition:0.3s;
+background:#ffd500;
+height:100%;
+border-radius:10px;
+transition:.3s;
+
+display:flex;
+align-items:center;
+justify-content:flex-end;
+
+padding-right:8px;
 }
 
-.progress-text{
-  margin-top:6px;
-  color:gold;
-  font-size:14px;
+/* رقم النسبة */
+
+.progress-box span{
+font-size:12px;
+font-weight:bold;
+color:#000;
+}
+
+/* رسالة نجاح الرفع */
+
+.upload-success{
+color:#00ff88;
+margin-top:8px;
+font-size:14px;
+}
+
+/* PDF Viewer */
+
+.pdf-viewer{
+margin-top:20px;
+width:100%;
+}
+
+.pdf-frame{
+width:100%;
+height:700px;
+border:none;
+border-radius:10px;
+background:#111;
 }
